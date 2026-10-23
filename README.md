@@ -41,11 +41,6 @@ and quickshell to `~/.rice`'s `rice-reload`); run it by hand any time a
 config changes under a running session.
 
 Tested distro families: Fedora (dnf), Debian/Ubuntu (apt), Arch (pacman).
-On Arch, three of the VPN extras (`mullvad`, `netbird`, `protonvpn`) and
-`ssh-vpn`'s NetworkManager plugin only have a community AUR package, no
-official one — `extras/*/setup.sh` needs `yay` or `paru` already on PATH
-for those specifically and fails with instructions if neither is found;
-it never installs one for you.
 
 `.bootstrap/` holds what `install.sh` drives: system packages
 (`packages.txt`), the installer library shared with `~/.rice/install.sh`
@@ -170,41 +165,17 @@ Enable them per machine:
 
 ```
 ~/.dots/extras/extras.sh list             # * marks the enabled ones
-~/.dots/extras/extras.sh enable mullvad   # install it, link it in, restart quickshell
-~/.dots/extras/extras.sh disable mullvad  # unlink it (installed packages stay)
+~/.dots/extras/extras.sh enable backup    # install it, link it in
+~/.dots/extras/extras.sh disable backup   # unlink it (installed packages stay)
 ```
 
 The enabled list is kept in the untracked `.extras-enabled`, and
 `install.sh` re-links whatever is on it. Each extra is a directory with a
 `setup.sh` (installs its dependencies, idempotent) and/or a `home/` stow
-package. A VPN extra's quickshell panel is desktop code, so it lives in
-`~/.rice/desktop/extras/<name>/home` and is linked only on the desktop
-profile; on a terminal machine the extra is just its client.
-
-VPN clients are one extra each, open-source clients only. Enabling one
-installs the client and its daemon; the ones with quickshell code add
-themselves to the network popup's vpn section (status, connect/disconnect,
-and a › panel with the client's own settings), next to NetworkManager's
-VPN profiles — which is where the NM-plugin extras' profiles show up.
-
-| Extra | What it adds |
-| --- | --- |
-| `mullvad` | Mullvad VPN; panel: relay location by country/city, reconnect, lockdown mode, auto-connect, account expiry |
-| `netbird` | NetBird (daemon + CLI, no tray app); panel: peers, management errors, session expiry. `[connect]` opens SSO login when needed |
-| `tailscale` | Tailscale, with you as its operator (no sudo for up/down); panel: login link, exit node picker, peers |
-| `protonvpn` | Proton VPN's CLI (no GTK app); panel: sign in (on a kitty terminal), kill switch, connect by country / fastest |
-| `zerotier` | ZeroTier One (installer signature-checked); no connect toggle — panel: node id, networks with [leave], join by network id |
-| `openvpn` | NM OpenVPN plugin: `nmcli connection import type openvpn file x.ovpn` |
-| `wireguard` | wireguard-tools: `nmcli connection import type wireguard file wg0.conf` |
-| `openconnect` | NM openconnect plugin: AnyConnect, GlobalProtect, Fortinet, Pulse — profiles via [settings] |
-| `vpnc` | NM vpnc plugin: Cisco IPsec (.pcf import) via [settings] |
-| `ssh-vpn` | NM SSH plugin: a VPN over a plain SSH login, via [settings] |
-
-`qs ipc call vpn toggle <name>` connects/disconnects a VPN extra, e.g. for
-a sway bind. Adding another client: an extra here with its `setup.sh`, plus
-`~/.rice/desktop/extras/<name>/home/` putting a `Vpn.qml` (a
-`components/VpnProvider.qml`) under `~/.config/quickshell/extras/<name>/`;
-`state/ExtrasState.qml` loads it at startup.
+package. An extra with a desktop half (say, a quickshell panel) keeps
+that in `~/.rice/desktop/extras/<name>/home`, linked only on the desktop
+profile. The VPN extras (and their panels) were dropped for now; they're
+on the `gui-archive` branch.
 
 ### Languages
 

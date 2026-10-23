@@ -3,8 +3,7 @@
 # pkg_install <dnf package>... -- <apt package>... -- <pacman package>...
 # Installs whichever of the packages for this distro's package manager
 # aren't installed yet; a no-op when they all are. Omit the trailing
-# `-- <pacman package>...` entirely if there's no official Arch package
-# (use aur_install from .bootstrap/aur.sh instead, see extras/ssh-vpn).
+# `-- <pacman package>...` entirely if there's no official Arch package.
 pkg_install() {
     local dnf_pkgs=() apt_pkgs=() pacman_pkgs=() missing=() pkg
     while [ $# -gt 0 ] && [ "$1" != "--" ]; do dnf_pkgs+=("$1"); shift; done
