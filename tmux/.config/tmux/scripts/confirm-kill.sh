@@ -10,14 +10,14 @@
 #
 # confirm-before can't do this: a cancelled prompt drops the rest of the
 # command chain, so there'd be nothing left to undo the highlight.
-# Colors come from the @rice-* options (apply-theme), with fallbacks.
+# Colors come from the @color-* options (apply-theme), with fallbacks.
 kind=$1
 id=${2:-$(tmux display -p "#{${kind}_id}")}
 
-rice() { local v; v=$(tmux show -gqv "@rice-$1" 2>/dev/null || true); echo "${v:-$2}"; }
+color() { local v; v=$(tmux show -gqv "@color-$1" 2>/dev/null || true); echo "${v:-$2}"; }
 fg() { printf '\033[38;2;%d;%d;%dm' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}"; }
 
-red=$(rice red '#e8606e') bg=$(rice black '#0a0f1a') gray=$(rice gray '#56657d') txt=$(rice fg '#dce6f5')
+red=$(color red '#e8606e') bg=$(color black '#0a0f1a') gray=$(color gray '#56657d') txt=$(color fg '#dce6f5')
 # ~25% of the alert color over the background: visible, text stays readable
 # shellcheck disable=SC2046,SC2183 # word-split on purpose: one arg per channel
 tint=$(printf '#%02x%02x%02x' $(for i in 1 3 5; do

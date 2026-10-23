@@ -1,29 +1,18 @@
--- Theme (~/.rice) — editor chrome only, code syntax colors untouched.
--- See ~/.rice/nvim/theme.lua for exactly what it does and doesn't set.
-local rice_theme = vim.fn.expand("~/.rice/nvim/theme.lua")
-
+-- Editor chrome only (statusline, splits, popups, gutter, signs); code
+-- syntax colors are untouched. The palette and the highlight groups it sets
+-- are in config/palette.lua.
 local M = {}
 
--- Neutral stand-ins for when ~/.rice isn't there (fresh machine, ssh box).
-local fallback = {
-  black = "#101010", surface = "#1c1c1c", fg = "#e0e0e0", white = "#ffffff",
-  neon = "#9a9a9a", acid = "#c0c0c0", dim = "#3a3a3a", deep = "#262626",
-  gray = "#5a5a5a", gray2 = "#7a7a7a", red = "#d75f5f", amber = "#d7af5f",
-  blue = "#5f87d7", magenta = "#d75fd7", cyan = "#5fd7d7",
-}
-
 local function load()
-  local ok, theme = pcall(dofile, rice_theme)
-  if ok and type(theme) == "table" then
-    return theme
+  local ok, palette = pcall(require, "config.palette")
+  if ok and type(palette) == "table" then
+    return palette
   end
 end
 
--- The rice palette (theme.toml's [colors]), with fallbacks for any key the
--- rendered theme doesn't export.
 function M.colors()
-  local theme = load()
-  return vim.tbl_extend("force", fallback, theme and theme.colors or {})
+  local palette = load()
+  return palette and palette.colors or {}
 end
 
 -- lualine theme from the palette: the mode block carries the mode's color,
@@ -93,7 +82,7 @@ end
 apply()
 
 vim.api.nvim_create_autocmd("ColorScheme", {
-  desc = "Reapply ~/.rice theme on top of any colorscheme change",
+  desc = "Reapply the palette on top of any colorscheme change",
   callback = apply,
 })
 
@@ -102,8 +91,7 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 -- in the pty after nvim quits and wins over kitty/foot's own cursor color
 -- (both explicitly say a program-set cursor color takes precedence over
 -- their own config) — so a shell that's had nvim open in it keeps showing
--- a stale cursor color across theme switches until the escape code is
--- reset. OSC 112 is the "reset cursor color to terminal default" sequence.
+-- a stale cursor color until the escape code is reset. OSC 112 is the "reset cursor color to terminal default" sequence.
 vim.api.nvim_create_autocmd("VimLeave", {
   desc = "Release the OSC 12 cursor color back to the terminal on exit",
   callback = function()

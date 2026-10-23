@@ -14,7 +14,7 @@ TMUX mode, where keys never reach nvim — so they never collide).
 | `lua/config/run.lua` | `␣r`: run / build / test per language |
 | `lua/config/terminal.lua` | the bottom terminal panel and the lazygit float |
 | `lua/config/autocmds.lua` | panels close with the last code window, yank flash |
-| `lua/config/theme.lua` | loads `~/.rice/nvim/theme.lua`; gives lualine/bufferline the palette |
+| `lua/config/theme.lua` | loads `lua/config/palette.lua`; gives lualine/bufferline the palette |
 | `lua/plugins/*.lua` | plugin specs only — no keys |
 
 New files need `stow -R --no-folding -t ~ nvim` (links are per file).
@@ -148,7 +148,6 @@ Linters run only when installed (`golangci-lint` isn't part of any extra).
 
 ## Theme
 
-Chrome only, from `~/.rice` (`templates/nvim/theme.lua.tmpl`): statusline,
-tabs, tree, outline, problems, debugger signs. Code colors are never touched.
-After `apply-theme`, running nvims pick it up on the next `:colorscheme` or
-restart.
+Chrome only, from `lua/config/palette.lua` (the fixed black/gray palette):
+statusline, tabs, tree, outline, problems, debugger signs. Code colors are
+never touched.

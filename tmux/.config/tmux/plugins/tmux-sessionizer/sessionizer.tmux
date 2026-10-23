@@ -7,14 +7,14 @@
 # Options (all optional):
 #   @sessionizer-width         popup width   (default 80%)
 #   @sessionizer-height        popup height  (default 70%)
-#   @sessionizer-border-style  popup border  (default fg=#{@rice-neon}, blue if unset)
+#   @sessionizer-border-style  popup border  (default fg=#{@color-neon}, blue if unset)
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 opt() { local v; v=$(tmux show -gqv "$1"); echo "${v:-$2}"; }
 
 w=$(opt @sessionizer-width 80%)
 h=$(opt @sessionizer-height 70%)
-border=$(opt @sessionizer-border-style 'fg=#{?#{@rice-neon},#{@rice-neon},blue}')
+border=$(opt @sessionizer-border-style 'fg=#{?#{@color-neon},#{@color-neon},blue}')
 
 # fixed index: re-sourcing the config replaces the alias instead of piling up
 tmux set -s 'command-alias[200]' \

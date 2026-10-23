@@ -24,8 +24,8 @@ cd ~/.dots
 
 | Profile | What it installs |
 | --- | --- |
-| `terminal` | this repo's packages, the CLI tools, `~/.rice` cloned for the palette (nothing desktop is linked or installed) |
-| `desktop` | `terminal`, then `~/.rice/install.sh`: sway, quickshell, kitty/foot, the flatpaks, the login screen and session services |
+| `terminal` | this repo's packages and the CLI tools; nothing from `~/.rice` |
+| `desktop` | `terminal`, then `~/.rice` cloned and its `install.sh`: sway, quickshell, kitty/foot, the flatpaks, the login screen and session services |
 
 The profile is saved in `~/.config/dots/profile`, so a bare `./install.sh`
 keeps it. Switching from `desktop` to `terminal` unlinks the desktop
@@ -37,7 +37,7 @@ already sitting at a target path (e.g. a distro's default `~/.bashrc`) is
 moved aside into `~/.local/state/dots/backup/<timestamp>/` first, so the
 repo version always wins and the old file is kept for reference. Finally
 it runs `dots-reload`, which pushes the new configs into whatever is
-already running (the tmux server, fish; on desktop it hands kitty, sway
+already running (the tmux server; on desktop it hands kitty, sway
 and quickshell to `~/.rice`'s `rice-reload`); run it by hand any time a
 config changes under a running session.
 
@@ -137,15 +137,16 @@ started from inside another (`CLAUDECODE` set) skips the pool and keeps
 the account it inherited. The first time an account opens a directory it
 asks to trust it, once.
 
-## .rice
+## Colors
 
-[`~/.rice`](https://github.com/piarn/.rice) owns the palette the configs
-here take their colors from (tmux, nvim, fish, fzf, eza, yazi, lazygit,
-lazydocker), and the desktop. Both profiles clone it over https (pushes go
-over ssh), fast-forward it when its branch has an upstream, and render the
-current theme (`~/.rice/bin/apply-theme`); only the desktop profile
-installs anything from it. Every config here still works without it,
-falling back to neutral colors.
+One fixed palette — black, dark and light grays, with muted red/amber/
+blue for errors, warnings and diffs — written straight into each tool's
+config: `fish/.../conf.d/00-colors.fish` (prompt, eza's `LS_COLORS`
+overrides, fzf), `eza/.config/eza/theme.yml`, `tmux/.../theme.conf`,
+`nvim/.../lua/config/palette.lua`, yazi's `theme.toml`, lazygit's and
+lazydocker's `config.yml`. No theme engine and no switching: to change a
+color, edit those files. The desktop's copies of the same palette are in
+`~/.rice`.
 
 ## tmux
 

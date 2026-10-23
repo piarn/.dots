@@ -9,7 +9,7 @@ Keys inside the popup: `enter` jump (thaws frozen), `^f` freeze session,
 `^r` rename the selected session / window / pane (frozen sessions and windows too),
 `^x` kill node / discard frozen (asks `y` first), `^n` new session named by the query.
 
-Colors come from `@rice-*` tmux options (`fg neon acid dim gray surface`),
+Colors come from `@color-*` tmux options (`fg neon acid dim gray surface`),
 with built-in fallbacks.
 
 ## Use

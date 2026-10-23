@@ -4,7 +4,7 @@ return {
   opts = function()
     return {
       options = {
-        theme = require("config.theme").lualine(), -- rice palette
+        theme = require("config.theme").lualine(), -- the palette
         globalstatus = true,
         component_separators = { left = "│", right = "│" },
         section_separators = { left = "", right = "" },

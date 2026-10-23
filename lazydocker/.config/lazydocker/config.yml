@@ -1,1 +1,12 @@
-../../../../.rice/lazydocker/config.yml
+# lazydocker colors (the fixed palette).
+gui:
+  theme:
+    activeBorderColor:
+      - "#bdbdbd"
+      - bold
+    inactiveBorderColor:
+      - "#2c2c2c"
+    selectedLineBgColor:
+      - "#2c2c2c"
+    optionsTextColor:
+      - "#7fa8a3"

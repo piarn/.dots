@@ -30,7 +30,7 @@ escape_format() {
 }
 
 # -> `#[fg=...]TEXT#[default]`, or bare TEXT when no style is configured (the
-# default: .rice owns the colours, this plugin only owns the words).
+# default: theme.conf owns the colours, this plugin only owns the words).
 segment() {
     text=$(escape_format "$1")
     style=$(escape_format "$2")

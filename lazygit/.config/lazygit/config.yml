@@ -1,1 +1,36 @@
-../../../../.rice/lazygit/config.yml
+# lazygit config: colors (the fixed palette) and the delta pager.
+gui:
+  theme:
+    activeBorderColor:
+      - "#bdbdbd"
+      - bold
+    inactiveBorderColor:
+      - "#2c2c2c"
+    searchingActiveBorderColor:
+      - "#e6e6e6"
+      - bold
+    optionsTextColor:
+      - "#7fa8a3"
+    selectedLineBgColor:
+      - "#2c2c2c"
+    inactiveViewSelectedLineBgColor:
+      - bold
+    cherryPickedCommitFgColor:
+      - "#0b0b0b"
+    cherryPickedCommitBgColor:
+      - "#e6e6e6"
+    markedBaseCommitFgColor:
+      - "#0b0b0b"
+    markedBaseCommitBgColor:
+      - "#c2a061"
+    unstagedChangesColor:
+      - "#c46a6a"
+    defaultFgColor:
+      - "#d0d0d0"
+
+# Not theme, but it has to live in this one file (see above): diffs through
+# delta like `git diff` (~/.dots/git/.gitconfig).
+git:
+  paging:
+    colorArg: always
+    pager: delta --paging=never

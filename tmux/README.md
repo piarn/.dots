@@ -22,7 +22,7 @@ a plugin needs its symlink too (`ln -s` the same relative path as its siblings).
 
 Load order in `tmux.conf` matters:
 
-1. options, `~/.rice/tmux/theme.conf`
+1. options, `theme.conf` (colors)
 2. TPM plugins + `run tpm`
 3. `vim-modes` — after TPM so its copy-mode keys beat tmux-yank's
 4. `tmux-sessionizer` and the direct binds — after vim-modes, because each
@@ -63,8 +63,8 @@ Load order in `tmux.conf` matters:
 | `^n` | new session named by what you typed in the filter |
 | type | fuzzy filter over every row, panes included (`nvim` finds every nvim pane) |
 
-Colors come from the `@rice-*` tmux options that `~/.rice/templates/tmux`
-writes, so `apply-theme` restyles the popup (border, tree, key bar, fzf).
+Colors come from the `@color-*` tmux options in `theme.conf` (border, tree,
+key bar, fzf).
 
 ## Direct binds
 

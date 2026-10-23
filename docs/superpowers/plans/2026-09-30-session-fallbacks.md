@@ -191,7 +191,7 @@ while [ "$i" -lt "$wait" ]; do
 done
 
 logger -t dots-lock "quickshell's lock screen didn't come up; locking with swaylock"
-color=$(sed -n 's/^set -g @rice-black *"#\([0-9a-fA-F]\{6\}\)".*/\1/p' "$HOME/.rice/tmux/theme.conf" 2>/dev/null)
+color=$(sed -n 's/^set -g @color-black *"#\([0-9a-fA-F]\{6\}\)".*/\1/p' "$HOME/.rice/tmux/theme.conf" 2>/dev/null)
 swaylock -f -c "${color:-000000}" || exit 1
 # Once swaylock exits the session is unlocked, so a quickshell restarting
 # later mustn't lock again from a flag its last instance left at 1.

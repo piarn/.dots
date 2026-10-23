@@ -21,7 +21,7 @@ BOOTSTRAP_DIR="$DOTS_DIR/.bootstrap"
 # shellcheck source=.bootstrap/lib.sh
 . "$BOOTSTRAP_DIR/lib.sh"
 
-PACKAGES=(agent-pool bash bat fd fish git lazydocker lazygit nvim ripgrep scripts ssh tmux yazi)
+PACKAGES=(agent-pool bash bat eza fd fish git lazydocker lazygit nvim ripgrep scripts ssh tmux yazi)
 # Fetched over https so a fresh machine needs no ssh key to install;
 # pushes still go over ssh.
 RICE_REPO="https://github.com/piarn/.rice.git"
@@ -115,10 +115,8 @@ update_rice() {
         || echo "warning: couldn't fast-forward $RICE_DIR; continuing with what's there" >&2
 }
 
-# .rice owns the palette every config here takes its colors from (tmux,
-# nvim, fish, fzf, eza, yazi, lazygit, lazydocker), and on the desktop
-# profile the desktop itself. Both profiles clone it and render the current
-# theme; only desktop installs anything from it (~/.rice/install.sh).
+# .rice is the desktop (sway, quickshell, ...): cloned, or fast-forwarded,
+# on the desktop profile only. The terminal side needs nothing from it.
 install_rice() {
     if [ ! -d "$RICE_DIR/.git" ]; then
         echo "==> cloning .rice"
@@ -127,8 +125,6 @@ install_rice() {
     else
         update_rice
     fi
-    # everything gets reloaded once, at the end of the install
-    DOTS_NO_RELOAD=1 "$RICE_DIR/bin/apply-theme"
 }
 
 install_yazi() { install_from_github_release yazi "${YAZI_ARCH:+${YAZI_ARCH}.zip}" yazi ya; }
@@ -192,7 +188,7 @@ preflight() {
         curl -fsS --head --max-time 10 https://github.com >/dev/null 2>&1 \
             || problems+=("cannot reach https://github.com")
     fi
-    if [ ! -d "$RICE_DIR/.git" ] && [ "$MODE" != ci ]; then
+    if [ "$profile" = desktop ] && [ ! -d "$RICE_DIR/.git" ] && [ "$MODE" != ci ]; then
         GIT_TERMINAL_PROMPT=0 git ls-remote "$RICE_REPO" HEAD >/dev/null 2>&1 \
             || problems+=("cannot read $RICE_REPO")
     fi
@@ -231,9 +227,6 @@ doctor() {
     fi
     [ "$DOCTOR_FAILS" -gt "$fails_before" ] || ok "every package is linked"
 
-    echo "rice"
-    if [ -d "$RICE_DIR/.git" ]; then ok "$RICE_DIR"; else bad "$RICE_DIR not cloned (the palette every config reads)"; fi
-
     echo "agent pool"
     if [ -x "$HOME/.agent-pool/bin/agent-pool" ]; then
         local pool_status
@@ -269,7 +262,7 @@ doctor() {
     local loaded newest
     if tmux list-sessions >/dev/null 2>&1; then
         loaded=$(tmux show -gqv @dots-loaded)
-        newest=$(stat -L -c %Y "$HOME/.config/tmux/tmux.conf" "$RICE_DIR/tmux/theme.conf" \
+        newest=$(stat -L -c %Y "$HOME/.config/tmux/tmux.conf" "$HOME/.config/tmux/theme.conf" \
             "$DOTS_DIR"/tmux/.config/tmux/plugins/*/*.tmux 2>/dev/null | sort -n | tail -1)
         if [ -z "$loaded" ]; then
             bad "tmux server predates tmux.conf's load marker, so its config is likely stale (run dots-reload)"
@@ -338,7 +331,7 @@ echo "==> profile: $profile"
 preflight
 install_packages "$BOOTSTRAP_DIR/packages.txt"
 install_node
-install_rice
+[ "$profile" = desktop ] && install_rice
 install_yazi
 install_lazygit
 install_lazydocker
@@ -362,7 +355,7 @@ elif [ "$previous" = desktop ] && [ -x "$RICE_DIR/install.sh" ]; then
     "$RICE_DIR/install.sh" --uninstall
 fi
 
-# Long-lived processes (tmux server, and on desktop sway, quickshell,
+# Long-lived processes (the tmux server; on desktop sway, quickshell and
 # kitty) read their config once at startup; push what was just linked in.
 "$DOTS_DIR/scripts/.local/bin/dots-reload"
 

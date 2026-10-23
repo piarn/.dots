@@ -15,7 +15,7 @@ check "desktop targets handed to rice-reload" called "rice sway quickshell"
 check "desktop alone: tmux left alone" not_called "tmux source-file"
 
 : >"$CALLS"; "$BIN/dots-reload" >/dev/null 2>&1
-check "no targets: everything" called "rice kitty quickshell sway wallpaper"
+check "no targets: everything" called "rice kitty quickshell sway"
 
 : >"$CALLS"; DOTS_RICE_RELOAD=$TMP/nope "$BIN/dots-reload" sway >/dev/null 2>&1; rc=$?
 check "terminal profile (no rice-reload): desktop skipped quietly" [ "$rc" -eq 0 ]

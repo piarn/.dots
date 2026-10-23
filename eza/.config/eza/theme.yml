@@ -1,0 +1,181 @@
+# eza colors (the fixed palette); ~/.config/eza is eza's default config dir.
+colourful: true
+
+filekinds:
+  normal:
+    foreground: "#d0d0d0"
+  directory:
+    foreground: "#bdbdbd"
+    is_bold: true
+  symlink:
+    foreground: "#7fa8a3"
+    is_italic: true
+  executable:
+    foreground: "#e6e6e6"
+    is_bold: true
+  pipe:
+    foreground: "#c2a061"
+  socket:
+    foreground: "#a08aad"
+  block_device:
+    foreground: "#7f93ad"
+  char_device:
+    foreground: "#7f93ad"
+  special:
+    foreground: "#c2a061"
+  mount_point:
+    foreground: "#bdbdbd"
+    is_bold: true
+
+perms:
+  user_read:
+    foreground: "#e6e6e6"
+  user_write:
+    foreground: "#c46a6a"
+  user_execute_file:
+    foreground: "#bdbdbd"
+    is_bold: true
+  user_execute_other:
+    foreground: "#bdbdbd"
+  group_read:
+    foreground: "#2c2c2c"
+  group_write:
+    foreground: "#c46a6a"
+  group_execute:
+    foreground: "#2c2c2c"
+  other_read:
+    foreground: "#1c1c1c"
+  other_write:
+    foreground: "#c46a6a"
+  other_execute:
+    foreground: "#1c1c1c"
+  special_user_file:
+    foreground: "#c2a061"
+  special_other:
+    foreground: "#c2a061"
+  attribute:
+    foreground: "#7fa8a3"
+
+size:
+  number_byte:
+    foreground: "#d0d0d0"
+  number_kilo:
+    foreground: "#e6e6e6"
+  number_mega:
+    foreground: "#bdbdbd"
+  number_giga:
+    foreground: "#c2a061"
+  number_huge:
+    foreground: "#c46a6a"
+    is_bold: true
+  unit_byte:
+    foreground: "#5f5f5f"
+  unit_kilo:
+    foreground: "#5f5f5f"
+  unit_mega:
+    foreground: "#5f5f5f"
+  unit_giga:
+    foreground: "#5f5f5f"
+  unit_huge:
+    foreground: "#5f5f5f"
+
+users:
+  user_you:
+    foreground: "#bdbdbd"
+    is_bold: true
+  user_root:
+    foreground: "#c46a6a"
+    is_bold: true
+  user_other:
+    foreground: "#858585"
+  group_yours:
+    foreground: "#e6e6e6"
+  group_other:
+    foreground: "#858585"
+  group_root:
+    foreground: "#c46a6a"
+
+links:
+  normal:
+    foreground: "#5f5f5f"
+  multi_link_file:
+    foreground: "#c2a061"
+
+git:
+  new:
+    foreground: "#bdbdbd"
+  modified:
+    foreground: "#c2a061"
+  deleted:
+    foreground: "#c46a6a"
+  renamed:
+    foreground: "#7f93ad"
+  typechange:
+    foreground: "#7fa8a3"
+  ignored:
+    foreground: "#5f5f5f"
+  conflicted:
+    foreground: "#a08aad"
+
+git_repo:
+  branch_main:
+    foreground: "#bdbdbd"
+    is_bold: true
+  branch_other:
+    foreground: "#e6e6e6"
+  git_clean:
+    foreground: "#bdbdbd"
+  git_dirty:
+    foreground: "#c46a6a"
+
+file_type:
+  image:
+    foreground: "#a08aad"
+  video:
+    foreground: "#a08aad"
+  music:
+    foreground: "#7f93ad"
+  lossless:
+    foreground: "#7f93ad"
+  crypto:
+    foreground: "#bdbdbd"
+    is_bold: true
+  document:
+    foreground: "#d0d0d0"
+  compressed:
+    foreground: "#c46a6a"
+  temp:
+    foreground: "#5f5f5f"
+    is_dimmed: true
+  compiled:
+    foreground: "#c2a061"
+  build:
+    foreground: "#c2a061"
+    is_bold: true
+    is_underline: true
+  source:
+    foreground: "#e6e6e6"
+
+punctuation:
+  foreground: "#2c2c2c"
+date:
+  foreground: "#e6e6e6"
+inode:
+  foreground: "#5f5f5f"
+blocks:
+  foreground: "#5f5f5f"
+header:
+  foreground: "#bdbdbd"
+  is_underline: true
+octal:
+  foreground: "#7fa8a3"
+symlink_path:
+  foreground: "#7fa8a3"
+control_char:
+  foreground: "#c46a6a"
+broken_symlink:
+  foreground: "#c46a6a"
+  is_bold: true
+broken_path_overlay:
+  foreground: "#c46a6a"
+  is_dimmed: true

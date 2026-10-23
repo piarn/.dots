@@ -15,7 +15,7 @@
 #
 # Meant to run inside a tmux popup (see sessionizer.tmux, bind it with `sessionizer`), so
 # it can end with `tmux switch-client` and have that land on the real client.
-# Colors come from the @rice-* tmux options (~/.rice/templates/tmux), so they
+# Colors come from the @color-* tmux options (~/.config/tmux/theme.conf), so they
 # follow apply-theme.
 set -euo pipefail
 
@@ -28,12 +28,12 @@ US=$'\037'   # read can't keep empty tab-separated fields, this separator it can
 mkdir -p "$FROZEN"
 
 # theme color (#rrggbb) by role, with a fallback if tmux hasn't got the option
-rice() { local v; v=$(tmux show -gqv "@rice-$1" 2>/dev/null || true); echo "${v:-$2}"; }
+color() { local v; v=$(tmux show -gqv "@color-$1" 2>/dev/null || true); echo "${v:-$2}"; }
 # #rrggbb -> 24-bit foreground escape
 fg() { printf '\033[38;2;%d;%d;%dm' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}"; }
 
-C_FG=$(rice fg '#dce6f5') C_NEON=$(rice neon '#3a86e0') C_ACID=$(rice acid '#7cc0ff')
-C_DIM=$(rice dim '#1c2c47') C_GRAY=$(rice gray '#56657d') C_SURFACE=$(rice surface '#111a2b')
+C_FG=$(color fg '#dce6f5') C_NEON=$(color neon '#3a86e0') C_ACID=$(color acid '#7cc0ff')
+C_DIM=$(color dim '#1c2c47') C_GRAY=$(color gray '#56657d') C_SURFACE=$(color surface '#111a2b')
 
 age() {
     local s=$(($(date +%s) - $(stat -c %Y "$1")))
@@ -198,7 +198,7 @@ case "${1:-}" in
             *) what="the frozen snapshot of ${3}" ;;
         esac
         printf '\n  %s\033[1mkill %s?\033[0m  %sy\033[0m%s kill · any other key cancels\033[0m ' \
-            "$(fg "$(rice red '#e8606e')")" "$what" "$(fg "$C_ACID")" "$(fg "$C_GRAY")"
+            "$(fg "$(color red '#e8606e')")" "$what" "$(fg "$C_ACID")" "$(fg "$C_GRAY")"
         read -rsn1 k </dev/tty
         [ "$k" = y ] && "${BASH_SOURCE[0]}" --kill "$2" "$3" "$4"
         exit 0 ;;

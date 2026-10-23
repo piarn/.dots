@@ -5,24 +5,20 @@
 # isn't running is skipped.
 #
 #   dots-reload                  everything
-#   dots-reload TARGET...        tmux fish kitty quickshell sway wallpaper
+#   dots-reload TARGET...        tmux kitty quickshell sway
 #
-# The one reload path for install.sh, ~/.rice/bin/apply-theme (just the
-# targets a theme switch changed) and the command center's "reload".
-# tmux and fish are reloaded here; the desktop targets go on to
-# rice-reload (~/.rice, desktop profile), and are skipped on a
-# terminal-only machine that doesn't have it.
-# DOTS_NO_RELOAD=1 makes it a no-op: install.sh sets it around
-# apply-theme, since it reloads everything itself once it's done.
+# The one reload path for install.sh and the launcher's "reload". tmux is
+# reloaded here; the desktop targets go on to rice-reload (~/.rice,
+# desktop profile), and are skipped on a terminal-only machine that
+# doesn't have it. DOTS_NO_RELOAD=1 makes it a no-op.
 [ -n "${DOTS_NO_RELOAD:-}" ] && exit 0
-[ $# -gt 0 ] || set -- tmux fish kitty quickshell sway wallpaper
+[ $# -gt 0 ] || set -- tmux kitty quickshell sway
 
-tmux=; fish=; desktop=
+tmux=; desktop=
 for target; do
     case $target in
         tmux) tmux=1 ;;
-        fish) fish=1 ;;
-        kitty|quickshell|sway|wallpaper) desktop="$desktop $target" ;;
+        kitty|quickshell|sway) desktop="$desktop $target" ;;
         *) sed -n '7,8p' "$0" | sed 's/^# \{0,1\}/usage: /' >&2; exit 1 ;;
     esac
 done
@@ -30,13 +26,6 @@ done
 if [ -n "$tmux" ] && tmux list-sessions >/dev/null 2>&1; then
     echo "==> reloading tmux"
     tmux source-file "$HOME/.config/tmux/tmux.conf" || echo "warning: tmux reload failed" >&2
-fi
-
-# The prompt color is a universal variable, which fish broadcasts to every
-# running session as soon as one process sets it.
-if [ -n "$fish" ] && [ -f "$HOME/.rice/fish/colors.fish" ] && pgrep -x fish >/dev/null; then
-    echo "==> pushing prompt colors to running fish sessions"
-    fish -c "source $HOME/.rice/fish/colors.fish" || echo "warning: fish reload failed" >&2
 fi
 
 rice_reload="${DOTS_RICE_RELOAD:-$HOME/.local/bin/rice-reload}"

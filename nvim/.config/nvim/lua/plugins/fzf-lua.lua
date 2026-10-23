@@ -12,7 +12,7 @@ return {
     end
   end,
   opts = {
-    -- fzf colors come from FZF_DEFAULT_OPTS (~/.rice fzf template), same as the shell
+    -- fzf colors come from FZF_DEFAULT_OPTS (fish conf.d/00-colors.fish), same as the shell
     winopts = { border = "single", preview = { border = "single" } },
   },
 }
