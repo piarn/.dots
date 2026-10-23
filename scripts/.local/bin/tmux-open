@@ -7,7 +7,7 @@
 #
 # If a terminal is already showing tmux, that client switches over and its
 # window gets focus, same as picking the session in the sessionizer; with
-# no client attached it opens a new kitty on the session.
+# no client attached it opens a new foot on the session.
 #
 #   tmux-open NAME [DIR [CMD...]]
 name=$(printf '%s' "$1" | tr '.:' '__')
@@ -26,7 +26,7 @@ fi
 # most recently active client
 client=$(tmux list-clients -F '#{client_activity} #{client_tty} #{client_pid}' 2>/dev/null | sort -nr | head -n1)
 if [ -z "$client" ]; then
-    exec kitty tmux attach-session -t "=$name"
+    exec foot tmux attach-session -t "=$name"
 fi
 set -- $client
 tmux switch-client -c "$2" -t "=$name"

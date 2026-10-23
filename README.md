@@ -25,7 +25,7 @@ cd ~/.dots
 | Profile | What it installs |
 | --- | --- |
 | `terminal` | this repo's packages and the CLI tools; nothing from `~/.rice` |
-| `desktop` | `terminal`, then `~/.rice` cloned and its `install.sh`: sway, quickshell, kitty/foot, the flatpaks, the login screen and session services |
+| `desktop` | `terminal`, then `~/.rice` cloned and its `install.sh`: sway, quickshell, foot, the flatpaks, the login screen and session services |
 
 The profile is saved in `~/.config/dots/profile`, so a bare `./install.sh`
 keeps it. Switching from `desktop` to `terminal` unlinks the desktop
@@ -37,8 +37,8 @@ already sitting at a target path (e.g. a distro's default `~/.bashrc`) is
 moved aside into `~/.local/state/dots/backup/<timestamp>/` first, so the
 repo version always wins and the old file is kept for reference. Finally
 it runs `dots-reload`, which pushes the new configs into whatever is
-already running (the tmux server; on desktop it hands kitty, sway
-and quickshell to `~/.rice`'s `rice-reload`); run it by hand any time a
+already running (the tmux server; on desktop it hands sway and
+quickshell to `~/.rice`'s `rice-reload`); run it by hand any time a
 config changes under a running session.
 
 Tested distro families: Fedora (dnf), Debian/Ubuntu (apt), Arch (pacman).

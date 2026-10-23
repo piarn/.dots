@@ -355,8 +355,8 @@ elif [ "$previous" = desktop ] && [ -x "$RICE_DIR/install.sh" ]; then
     "$RICE_DIR/install.sh" --uninstall
 fi
 
-# Long-lived processes (the tmux server; on desktop sway, quickshell and
-# kitty) read their config once at startup; push what was just linked in.
+# Long-lived processes (the tmux server; on desktop sway and quickshell)
+# read their config once at startup; push what was just linked in.
 "$DOTS_DIR/scripts/.local/bin/dots-reload"
 
 install_lsp_servers

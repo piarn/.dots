@@ -5,20 +5,20 @@
 # isn't running is skipped.
 #
 #   dots-reload                  everything
-#   dots-reload TARGET...        tmux kitty quickshell sway
+#   dots-reload TARGET...        tmux quickshell sway
 #
 # The one reload path for install.sh and the launcher's "reload". tmux is
 # reloaded here; the desktop targets go on to rice-reload (~/.rice,
 # desktop profile), and are skipped on a terminal-only machine that
 # doesn't have it. DOTS_NO_RELOAD=1 makes it a no-op.
 [ -n "${DOTS_NO_RELOAD:-}" ] && exit 0
-[ $# -gt 0 ] || set -- tmux kitty quickshell sway
+[ $# -gt 0 ] || set -- tmux quickshell sway
 
 tmux=; desktop=
 for target; do
     case $target in
         tmux) tmux=1 ;;
-        kitty|quickshell|sway) desktop="$desktop $target" ;;
+        quickshell|sway) desktop="$desktop $target" ;;
         *) sed -n '7,8p' "$0" | sed 's/^# \{0,1\}/usage: /' >&2; exit 1 ;;
     esac
 done

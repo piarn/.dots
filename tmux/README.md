@@ -127,7 +127,7 @@ Notes:
 punctuation and unbalanced brackets are trimmed). It opens through
 `~/.local/bin/browser` (the machine-local Firefox launcher: snap, flatpak or
 native) and falls back to `xdg-open`. A plain click stays with tmux
-(focus/selection); kitty's own Ctrl+Shift+click doesn't reach a program that has
+(focus/selection); a terminal's own link click doesn't reach a program that has
 the mouse, which is why this lives in tmux. A URL wrapped across two rows only
 matches on the row you click.
 
