@@ -65,3 +65,13 @@ au("TermOpen", {
     vim.wo.signcolumn = "no"
   end,
 })
+
+-- Pick up changes made outside nvim (git or a formatter in another tmux
+-- pane) as soon as it's focused again; a buffer with unsaved edits asks first.
+au({ "FocusGained", "BufEnter", "TermLeave" }, {
+  group = group,
+  desc = "Reload files changed outside nvim",
+  callback = function()
+    if vim.fn.getcmdwintype() == "" then vim.cmd.checktime() end
+  end,
+})

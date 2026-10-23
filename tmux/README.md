@@ -28,6 +28,29 @@ Load order in `tmux.conf` matters:
 4. `tmux-sessionizer` and the direct binds — after vim-modes, because each
    bind's NORMAL-mode copy ends in `vim-modes-return`, an alias vim-modes defines
 
+## Inside foot
+
+foot stays a plain terminal (tmux is started by hand); once it's running,
+tmux passes everything foot can do through to the programs inside it
+(`terminal-features` for `foot*` in `tmux.conf`): true colour, nvim's cursor
+shapes and curly underlines, OSC 52 clipboard (`set-clipboard`), hyperlinks,
+synchronized output, focus events, extended keys (Shift+Enter, Ctrl+Enter
+reach nvim, fish and claude as CSI u), image passthrough (yazi's previews)
+and the window title (`session · window`). These are read when a client
+attaches: detach and reattach after changing them.
+
+The layers share keys and state:
+
+- **Ctrl+h/j/k/l** moves between tmux panes and nvim splits alike
+  (vim-tmux-navigator, both sides).
+- **Clipboard** is one: nvim (`unnamedplus`), tmux-yank and SCROLL-mode
+  yanks all land in the Wayland clipboard; over ssh, nvim and tmux fall
+  back to OSC 52, so a yank on a server still reaches the laptop.
+- **nvim reloads** files changed in another pane (git, a formatter) when it's
+  focused again (`autoread` + `checktime` on focus).
+- **fzf pickers** in fish (Ctrl+R, files, git log/status, processes) open as
+  a tmux popup over the pane (`fish/.../conf.d/fzf-popup.fish`).
+
 ## Sessions: one per case
 
 - Each piece of work gets its own session; jump between them with the

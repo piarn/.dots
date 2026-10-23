@@ -31,6 +31,14 @@ opt.splitbelow = true
 
 opt.termguicolors = true
 opt.clipboard = "unnamedplus"
+-- Over ssh there's no Wayland clipboard to reach: OSC 52 asks the terminal
+-- (foot, through tmux's set-clipboard) to set the local one instead.
+if vim.env.SSH_TTY and not vim.env.WAYLAND_DISPLAY then
+  vim.g.clipboard = "osc52"
+end
+-- Files changed under nvim (git in the next tmux pane, a formatter) reload
+-- when it's focused again; tmux forwards focus (focus-events), see autocmds.
+opt.autoread = true
 opt.wrap = false
 opt.mouse = "a"
 
