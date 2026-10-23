@@ -222,9 +222,6 @@ doctor() {
     echo "links"
     local entries=() fails_before=$DOCTOR_FAILS
     for name in "${PACKAGES[@]}"; do entries+=("$DOTS_DIR:$name"); done
-    while IFS= read -r name; do
-        [ -d "$DOTS_DIR/extras/$name/home" ] && entries+=("$DOTS_DIR/extras/$name:home")
-    done < <(grep -v '^\s*$' "$DOTS_DIR/.extras-enabled" 2>/dev/null)
     doctor_links ok bad "${entries[@]}" || true
     local dangling
     dangling=$(dangling_links)
@@ -232,7 +229,7 @@ doctor() {
         bad "dangling links into ~/.dots or ~/.rice (install.sh removes them):"
         sed 's/^/          /' <<<"$dangling"
     fi
-    [ "$DOCTOR_FAILS" -gt "$fails_before" ] || ok "every package and enabled extra is linked"
+    [ "$DOCTOR_FAILS" -gt "$fails_before" ] || ok "every package is linked"
 
     echo "rice"
     if [ -d "$RICE_DIR/.git" ]; then ok "$RICE_DIR"; else bad "$RICE_DIR not cloned (the palette every config reads)"; fi
@@ -350,9 +347,6 @@ install_tree_sitter
 
 stow_packages "$DOTS_DIR" "${PACKAGES[@]}"
 save_profile "$profile"
-# Opt-in extras (extras/extras.sh) stay out of PACKAGES; this only re-links
-# the ones already enabled on this machine, so new files in them land too.
-"$DOTS_DIR/extras/extras.sh" restow
 prune_dangling_links
 
 reload_user_units

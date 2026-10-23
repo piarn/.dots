@@ -1,11 +1,12 @@
--- LSP behavior: server settings, servers provided by the language extras,
+-- LSP behavior: server settings, servers from the toolchains,
 -- diagnostics look, and the non-LSP tools mason keeps installed. Keys for all
 -- of this are in config/keymaps.lua.
 local M = {}
 
--- Installed by extras/<lang>/setup.sh, not mason. Enabled only when the
--- binary is on PATH, so a machine without that extra stays quiet.
-local from_extras = { "gopls", "clangd", "rust_analyzer", "nim_langserver" }
+-- Installed with their toolchain (distro package, mise, go install), not
+-- mason. Enabled only when the binary is on PATH, so a machine without that
+-- toolchain stays quiet.
+local from_toolchains = { "gopls", "clangd", "rust_analyzer", "nim_langserver" }
 
 -- Formatters conform.nvim calls and the Python debug adapter.
 local tools = { "debugpy", "stylua", "shfmt", "goimports", "gofumpt" }
@@ -78,7 +79,7 @@ function M.setup()
     },
   })
 
-  for _, name in ipairs(from_extras) do
+  for _, name in ipairs(from_toolchains) do
     local cfg = vim.lsp.config[name]
     local cmd = cfg and cfg.cmd
     if type(cmd) == "table" and vim.fn.executable(cmd[1]) == 1 then

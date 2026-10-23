@@ -1,7 +1,8 @@
 # .dotfiles
 
-The terminal: shell (fish, bash), editor (nvim), tmux, git and the TUI
-tools (yazi, lazygit, lazydocker, fzf, ripgrep, ...), plus the
+A minimal development and devops machine in a terminal: shell (fish,
+bash), editor (nvim), tmux, git and the TUI tools (yazi, lazygit,
+lazydocker, fzf, ripgrep, ...), per-project toolchains via mise, plus the
 [agent pool](#agent-pool) that runs `claude` across two subscriptions.
 Managed with [GNU Stow](https://www.gnu.org/software/stow/): each
 top-level directory (`bash`, `fish`, `nvim`, ...) is a stow package whose
@@ -41,6 +42,9 @@ and quickshell to `~/.rice`'s `rice-reload`); run it by hand any time a
 config changes under a running session.
 
 Tested distro families: Fedora (dnf), Debian/Ubuntu (apt), Arch (pacman).
+Nothing is optional or per-language: the language toolchains come per
+project from mise (see [Toolchains](#toolchains)), and nvim enables a
+language server only when it's installed.
 
 `.bootstrap/` holds what `install.sh` drives: system packages
 (`packages.txt`), the installer library shared with `~/.rice/install.sh`
@@ -156,62 +160,6 @@ tmux and sway (one file, `lua/config/keymaps.lua`), toggleable tree / outline /
 problems / terminal panels, run-build-test per language, a debugger with a
 modal stepping layer, and hardtime breaking hjkl habits — see
 [`nvim/README.md`](nvim/README.md).
-
-## Extras
-
-Opt-in features that aren't part of the base setup live under
-[`extras/`](extras): `install.sh` never installs or links them on its own.
-Enable them per machine:
-
-```
-~/.dots/extras/extras.sh list             # * marks the enabled ones
-~/.dots/extras/extras.sh enable backup    # install it, link it in
-~/.dots/extras/extras.sh disable backup   # unlink it (installed packages stay)
-```
-
-The enabled list is kept in the untracked `.extras-enabled`, and
-`install.sh` re-links whatever is on it. Each extra is a directory with a
-`setup.sh` (installs its dependencies, idempotent) and/or a `home/` stow
-package. An extra with a desktop half (say, a quickshell panel) keeps
-that in `~/.rice/desktop/extras/<name>/home`, linked only on the desktop
-profile. The VPN extras (and their panels) were dropped for now; they're
-on the `gui-archive` branch.
-
-### Languages
-
-One extra per language, each just a `setup.sh` that installs the distro's
-toolchain plus the editor tooling (nothing is linked into `$HOME`):
-
-| Extra | What it adds |
-| --- | --- |
-| `c` | gcc, clang, make, cmake, gdb, clangd |
-| `go` | Go, plus `gopls` and `dlv` via `go install` (into `$(go env GOPATH)/bin`) |
-| `json` | jq (nvim formats JSON with it) |
-| `lua` | Lua 5.4, LuaJIT, luarocks |
-| `nim` | Nim + nimble + `nimlangserver`; Fedora has no Nim package, so there it comes from choosenim into `~/.nimble/bin` (update: `choosenim update stable`) |
-| `node` | Node.js + npm |
-| `python` | Python 3 with pip/venv/headers, pipx, uv |
-| `rust` | rustc, cargo, rust-analyzer |
-| `yaml` | yq + yamllint (nvim formats/lints YAML with them); Debian/Ubuntu's `yq` is a different tool, so there only yamllint |
-| `zig` | Zig (packaged on Fedora/Arch; Debian/Ubuntu depends on the release) |
-
-### backup
-
-`extras.sh enable backup` installs restic and a daily `backup.timer`
-snapshotting `~` (minus caches, Steam, toolchains, `node_modules` — see
-`extras/backup/home/.config/backup/excludes`), then keeps 7 daily, 4
-weekly and 12 monthly snapshots. Per machine, in `~/.config/backup/`:
-`env` (where to — a disk, `sftp:host:/path`, any restic backend — and
-what to keep) and a generated `password`: **keep a copy of it elsewhere**,
-the backup is unreadable without it. Then once: `backup init`.
-
-`backup` with no arguments runs a backup like the timer does; anything else
-goes to restic with the repository filled in: `backup snapshots`,
-`backup restore latest --target /tmp/r --include ~/notes`,
-`backup mount ~/mnt`. A failed run sends a notification.
-
-Extras can ship systemd timers (`home/.config/systemd/user/*.timer`);
-`extras.sh` enables them on `enable` and disables them on `disable`.
 
 ## Git
 

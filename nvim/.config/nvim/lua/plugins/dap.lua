@@ -2,9 +2,9 @@
 -- and closes after it). Keys are the ␣d group in config/keymaps.lua; ␣dd is
 -- DEBUG mode (bare n/s/o/c/b/K until Esc).
 --
--- Adapters come from the language extras, not mason, except debugpy:
---   go               dlv dap        (extras/go)
---   c/cpp/rust/zig   lldb-dap       (extras/c — part of lldb)
+-- Adapters come with the language toolchains, not mason, except debugpy:
+--   go               dlv dap        (go install github.com/go-delve/delve/cmd/dlv@latest)
+--   c/cpp/rust/zig   lldb-dap       (part of lldb)
 --   python           debugpy        (mason; config/lsp.lua installs it)
 return {
   "mfussenegger/nvim-dap",

@@ -11,8 +11,8 @@ return {
       rust = { "rustfmt" },
       nim = { "nimpretty" },
       sh = { "shfmt" },
-      json = { "jq" }, -- extras/json
-      yaml = { "yq" }, -- extras/yaml
+      json = { "jq" }, -- jq, if installed
+      yaml = { "yq" }, -- yq, if installed
     },
   },
 }

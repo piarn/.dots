@@ -1,9 +1,0 @@
-[Unit]
-Description=Back up home with restic (~/.local/bin/backup)
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=%h/.local/bin/backup
-Nice=19
-IOSchedulingClass=idle

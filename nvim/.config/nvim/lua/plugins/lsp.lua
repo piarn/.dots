@@ -1,5 +1,5 @@
 -- Server installs + lspconfig's server definitions. What the servers do once
--- attached (settings, diagnostics, extras' servers) is config/lsp.lua; their
+-- attached (settings, diagnostics, toolchain servers) is config/lsp.lua; their
 -- keys are config/keymaps.lua.
 return {
   {
@@ -15,7 +15,7 @@ return {
       "b0o/SchemaStore.nvim", -- JSON/YAML schemas for jsonls and yamlls
     },
     -- Only servers no language extra installs; gopls, clangd, rust_analyzer
-    -- and nim_langserver come from extras/<lang> (see config/lsp.lua).
+    -- and nim_langserver come with their toolchains (see config/lsp.lua).
     opts = {
       ensure_installed = {
         "basedpyright",

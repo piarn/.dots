@@ -8,8 +8,8 @@
 #   dots-reload TARGET...        tmux fish kitty quickshell sway wallpaper
 #
 # The one reload path for install.sh, ~/.rice/bin/apply-theme (just the
-# targets a theme switch changed), extras.sh and the command center's
-# "reload". tmux and fish are reloaded here; the desktop targets go on to
+# targets a theme switch changed) and the command center's "reload".
+# tmux and fish are reloaded here; the desktop targets go on to
 # rice-reload (~/.rice, desktop profile), and are skipped on a
 # terminal-only machine that doesn't have it.
 # DOTS_NO_RELOAD=1 makes it a no-op: install.sh sets it around
