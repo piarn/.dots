@@ -81,7 +81,7 @@ function M.send(cmd)
   end
 end
 
--- A full-screen floating terminal running `cmd` (lazygit, ...); closes when
+-- A full-screen floating terminal running `cmd`; closes when
 -- the program exits.
 function M.float(cmd)
   local buf = vim.api.nvim_create_buf(false, true)

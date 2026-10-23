@@ -21,7 +21,7 @@ BOOTSTRAP_DIR="$DOTS_DIR/.bootstrap"
 # shellcheck source=.bootstrap/lib.sh
 . "$BOOTSTRAP_DIR/lib.sh"
 
-PACKAGES=(agent-pool bash bat eza fd fish git lazydocker lazygit nvim ripgrep scripts ssh tmux yazi)
+PACKAGES=(agent-pool bash bat eza fd fish git nvim ripgrep scripts ssh tmux yazi)
 # Fetched over https so a fresh machine needs no ssh key to install;
 # pushes still go over ssh.
 RICE_REPO="https://github.com/piarn/.rice.git"
@@ -30,20 +30,16 @@ RICE_PUSH_URL="git@github.com:piarn/.rice.git"
 # shellcheck disable=SC2034  # read by .bootstrap/lib.sh
 declare -A RELEASE_VERSIONS=(
     [yazi]=v26.9.1
-    [lazygit]=v0.65.1
-    [lazydocker]=v0.25.2
     [mise]=v2026.9.18
     [tree-sitter]=v0.27.0
 )
 # shellcheck disable=SC2034
 declare -A RELEASE_REPOS=(
     [yazi]=sxyazi/yazi
-    [lazygit]=jesseduffield/lazygit
-    [lazydocker]=jesseduffield/lazydocker
     [mise]=jdx/mise
     [tree-sitter]=tree-sitter/tree-sitter
 )
-RELEASE_TOOLS=(yazi lazygit lazydocker mise tree-sitter)
+RELEASE_TOOLS=(yazi mise tree-sitter)
 
 # Several Mason-managed LSP servers (json-lsp, bash-language-server,
 # yaml-language-server, ...) are npm packages, so npm must exist before
@@ -128,8 +124,6 @@ install_rice() {
 }
 
 install_yazi() { install_from_github_release yazi "${YAZI_ARCH:+${YAZI_ARCH}.zip}" yazi ya; }
-install_lazygit() { install_from_github_release lazygit "${RELEASE_ARCH:+linux_${RELEASE_ARCH}.tar.gz}" lazygit; }
-install_lazydocker() { install_from_github_release lazydocker "${RELEASE_ARCH:+Linux_${RELEASE_ARCH}.tar.gz}" lazydocker; }
 # mise: per-project language toolchains, activated by fish/conf.d/mise.fish.
 # The asset pattern matches just the glibc tarball (not -musl, .tar.zst or .sig).
 install_mise() { install_from_github_release mise "${MISE_ARCH:+linux-${MISE_ARCH}.tar.gz}" mise; }
@@ -176,7 +170,7 @@ preflight() {
     for name in sudo git python3; do
         command -v "$name" >/dev/null 2>&1 || problems+=("'$name' is required to run the installer but is not on PATH")
     done
-    [ -n "$RELEASE_ARCH" ] || problems+=("unsupported CPU architecture $(uname -m) (yazi/lazygit/lazydocker release binaries)")
+    [ -n "$RELEASE_ARCH" ] || problems+=("unsupported CPU architecture $(uname -m) (yazi/mise release binaries)")
 
     command -v npm >/dev/null 2>&1 || extra+=(nodejs npm)
     if [ "$(package_manager)" = apt ] && ! python3 -c 'import venv, ensurepip' >/dev/null 2>&1; then
@@ -309,8 +303,6 @@ ci() {
     install_packages "$BOOTSTRAP_DIR/packages.txt"
     install_node
     install_yazi
-    install_lazygit
-    install_lazydocker
     install_mise
     install_tree_sitter
 }
@@ -333,8 +325,6 @@ install_packages "$BOOTSTRAP_DIR/packages.txt"
 install_node
 [ "$profile" = desktop ] && install_rice
 install_yazi
-install_lazygit
-install_lazydocker
 install_mise
 install_tree_sitter
 

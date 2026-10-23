@@ -12,7 +12,7 @@ TMUX mode, where keys never reach nvim — so they never collide).
 | `lua/config/options.lua` | options |
 | `lua/config/lsp.lua` | server settings, the extras' servers, diagnostics look, mason tools |
 | `lua/config/run.lua` | `␣r`: run / build / test per language |
-| `lua/config/terminal.lua` | the bottom terminal panel and the lazygit float |
+| `lua/config/terminal.lua` | the bottom terminal panel and a floating terminal |
 | `lua/config/autocmds.lua` | panels close with the last code window, yank flash |
 | `lua/config/theme.lua` | loads `lua/config/palette.lua`; gives lualine/bufferline the palette |
 | `lua/plugins/*.lua` | plugin specs only — no keys |
@@ -92,7 +92,7 @@ Opens clean: code, buffer tabs on top, one statusline. Panels on demand:
 | --- | --- |
 | `␣f` find | `ff` files · `fg` grep · `fw` word / selection · `fr` recent (project) · `fs` workspace symbols · `fh` help · `fc` ex commands · `f.` resume |
 | `␣c` code | `ca` action · `cr` rename · `cf` format · `cd` line diagnostics · `cl` restart LSP |
-| `␣g` git | `gg` lazygit · `gs` stage hunk/lines · `gS` stage file · `gr` reset hunk/lines · `gp` preview · `gb` blame · `gd` diff file |
+| `␣g` git | `gs` stage hunk/lines · `gS` stage file · `gr` reset hunk/lines · `gp` preview · `gb` blame · `gd` diff file |
 | `␣r` run | `rr` run · `rb` build → problems · `rt` test nearest · `rT` test file/package · `rl` repeat last |
 | `␣d` debug | `db` breakpoint · `dB` conditional · `dc` start/continue · `dn` over · `ds` in · `do` out · `dK` inspect · `dv` view · `dq` stop · **`dd` DEBUG mode** |
 | `␣u` toggle | `uh` hardtime · `uw` wrap · `un` relative numbers · `ui` inlay hints · `ub` inline blame · `ud` diagnostic text |

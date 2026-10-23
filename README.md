@@ -1,8 +1,8 @@
 # .dotfiles
 
 A minimal development and devops machine in a terminal: shell (fish,
-bash), editor (nvim), tmux, git and the TUI tools (yazi, lazygit,
-lazydocker, fzf, ripgrep, ...), per-project toolchains via mise, plus the
+bash), editor (nvim), tmux, git and the TUI tools (yazi, fzf,
+ripgrep, ...), per-project toolchains via mise, plus the
 [agent pool](#agent-pool) that runs `claude` across two subscriptions.
 Managed with [GNU Stow](https://www.gnu.org/software/stow/): each
 top-level directory (`bash`, `fish`, `nvim`, ...) is a stow package whose
@@ -54,7 +54,7 @@ the profile) and the one-time fish plugin-manager setup (`fish/`). A few
 package name (`ripgrep`→`rg`, `neovim`→`nvim`) or a differently-cased
 package name on apt — `lib.sh` handles both via small override maps.
 
-`yazi`, `lazygit`, `lazydocker` and `mise` aren't packaged for apt/dnf
+`yazi` and `mise` aren't packaged for apt/dnf
 (and `tree-sitter`, which nvim builds its parsers with, is too old on
 Debian/Ubuntu), so `install.sh` downloads each from its project's GitHub
 releases into `~/.local/bin` instead, pinned to the tag in
@@ -143,9 +143,8 @@ One fixed palette — black, dark and light grays, with muted red/amber/
 blue for errors, warnings and diffs — written straight into each tool's
 config: `fish/.../conf.d/00-colors.fish` (prompt, eza's `LS_COLORS`
 overrides, fzf), `eza/.config/eza/theme.yml`, `tmux/.../theme.conf`,
-`nvim/.../lua/config/palette.lua`, yazi's `theme.toml`, lazygit's and
-lazydocker's `config.yml`. No theme engine and no switching: to change a
-color, edit those files. The desktop's copies of the same palette are in
+`nvim/.../lua/config/palette.lua` and yazi's `theme.toml`. No theme
+engine and no switching: to change a color, edit those files. The desktop's copies of the same palette are in
 `~/.rice`.
 
 ## tmux
@@ -170,7 +169,7 @@ as Verified, add that key's `.pub` once more under Settings → SSH keys as
 a **Signing key**. `git log --show-signature` verifies locally against
 `git/.config/git/allowed_signers`. A `.gitconfig.identity.work` should set
 its own `signingkey` (or `[commit] gpgsign = false`). Diffs go through
-delta (git and lazygit), with histogram diffs, zdiff3 conflict markers,
+delta, with histogram diffs, zdiff3 conflict markers,
 rerere and prune-on-fetch on.
 
 ## Toolchains

@@ -10,7 +10,7 @@ tmux
 bat
 ripgrep
 unzip
-# delta: git's pager (git/.gitconfig) and lazygit's; binary is `delta`
+# delta: git's pager (git/.gitconfig); binary is `delta`
 git-delta
 # apt/dnf package is fd-find; the binary it installs is fd on Fedora but
 # fdfind on Debian/Ubuntu (see fish/.../functions/_fzf_search_directory.fish),

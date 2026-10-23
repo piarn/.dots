@@ -226,7 +226,6 @@ local function gs(fn, ...)
   end
 end
 
-map("n", "<leader>gg", function() require("config.terminal").float("lazygit") end, { desc = "Lazygit" })
 map("n", "<leader>gs", gs("stage_hunk"), { desc = "Stage hunk (again: unstage)" })
 map("x", "<leader>gs", function() require("gitsigns").stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage lines" })
 map("n", "<leader>gS", gs("stage_buffer"), { desc = "Stage file" })

@@ -9,7 +9,7 @@
 #   ctrl-n  new session named by the query
 #
 # Frozen = a per-session snapshot cut out of tmux-resurrect's newest save
-# (windows, layouts, cwds; nvim/lazygit are relaunched) into $FROZEN, so it
+# (windows, layouts, cwds; nvim is relaunched) into $FROZEN, so it
 # survives continuum's autosaves overwriting `last`. Thawing rebuilds it and
 # deletes the snapshot.
 #
@@ -141,7 +141,7 @@ thaw() {
         mapfile -t panes < <(tmux list-panes -t "$wid" -F '#{pane_id}')
         for ((i = 0; i < ${#panes[@]}; i++)); do
             case "${cmds[i]:-}" in
-                nvim | lazygit) tmux send-keys -t "${panes[i]}" "${cmds[i]}" Enter ;;
+                nvim) tmux send-keys -t "${panes[i]}" "${cmds[i]}" Enter ;;
             esac
             [ "${actives[i]:-}" = 1 ] && tmux select-pane -t "${panes[i]}"
         done

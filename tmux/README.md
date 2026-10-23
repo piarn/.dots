@@ -35,7 +35,7 @@ Load order in `tmux.conf` matters:
   previous one.
 - **Persistence:** `tmux-resurrect` + `tmux-continuum` autosave every 10 min and
   restore on server start, so a reboot brings everything back running (pane
-  contents captured; `nvim` and `lazygit` are relaunched).
+  contents captured; `nvim` is relaunched).
 - **Frozen sessions** are the sessionizer's own layer on top: `^f` on a row
   snapshots that session's windows, panes, layouts and cwds to
   `~/.local/share/tmux/frozen/<name>.txt` and kills it. It shows as `❄` in the
