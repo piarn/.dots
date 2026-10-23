@@ -19,6 +19,9 @@ if [ -f ~/.config/environment.d/10-langs.conf ] && [ -z "${MISE_DATA_DIR:-}" ]; 
     done <~/.config/environment.d/10-langs.conf
 fi
 
+# choosenim doesn't read nimble.ini: its proxies belong in ~/.langs/nimble/bin
+alias choosenim='choosenim --nimbleDir:"$HOME/.langs/nimble"'
+
 # the agent pool's `claude` wraps the real one in ~/.local/bin
 case ":$PATH:" in *":$HOME/.agent-pool/bin:"*) ;; *) PATH="$HOME/.agent-pool/bin:$PATH" ;; esac
 export PATH

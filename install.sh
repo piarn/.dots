@@ -157,6 +157,17 @@ install_toolchains() {
     "$LOCAL_BIN/mise" install --yes || echo "warning: mise install failed; run it again later" >&2
 }
 
+# Nim, through choosenim, into ~/.langs/choosenim (toolchains) and
+# ~/.langs/nimble (packages, the nim/nimble proxies). Skipped when this
+# machine already has it.
+install_nim() {
+    [ -x "$HOME/.langs/nimble/bin/nim" ] && return
+    echo "==> installing Nim (choosenim stable, into ~/.langs)"
+    curl -fsSL https://nim-lang.org/choosenim/init.sh \
+        | CHOOSENIM_DIR="$HOME/.langs/choosenim" NIMBLE_DIR="$HOME/.langs/nimble" sh -s -- -y \
+        || echo "warning: Nim install failed; see https://github.com/nim-lang/choosenim" >&2
+}
+
 install_tpm() {
     local tpm_dir="$HOME/.tmux/plugins/tpm"
     [ -d "$tpm_dir" ] || git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
@@ -254,6 +265,7 @@ doctor() {
         missing_tools=$("$LOCAL_BIN/mise" ls --missing --global 2>/dev/null | awk '{print $1 "@" $2}' | tr '\n' ' ')
         if [ -z "$missing_tools" ]; then ok "mise toolchains (~/.langs/mise)"; else bad "not installed: $missing_tools(run install.sh, or mise install)"; fi
     fi
+    if [ -x "$HOME/.langs/nimble/bin/nim" ]; then ok "nim ($("$HOME/.langs/nimble/bin/nim" -v 2>/dev/null | sed -n '1s/.*Version \([^ ]*\).*/\1/p'))"; else bad "nim not installed (run install.sh)"; fi
     local stray=() d
     for d in go android-sdk jdk21 .gradle .pub-cache .android .cargo .rustup .choosenim .nimble; do
         # a symlink into ~/.langs (~/.android, for adb) is where it should be
@@ -378,6 +390,7 @@ install_fish_plugins
 install_tpm
 "$HOME/.tmux/plugins/tpm/bin/install_plugins" >/dev/null 2>&1 || true
 install_toolchains
+install_nim
 "$HOME/.agent-pool/bin/agent-pool" setup
 
 if [ "$profile" = desktop ]; then

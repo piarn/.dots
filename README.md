@@ -186,6 +186,7 @@ directory each, and nothing of theirs in `$HOME` itself:
 | `android/sdk`, `android/.android` | `ANDROID_HOME`, and `ANDROID_USER_HOME` (emulators, adb keys; `~/.android` is a symlink here, since adb only looks there) |
 | `gradle/` | `GRADLE_USER_HOME` |
 | `pub/` | `PUB_CACHE`, Dart/Flutter packages |
+| `choosenim/`, `nimble/` | Nim: toolchains (`choosenim stable`; `CHOOSENIM_DIR`) and packages/tools (`nimble`, nimlangserver; set in `~/.config/nimble/nimble.ini`). `install.sh` installs it |
 | `cargo/` | `CARGO_HOME`/`RUSTUP_HOME`, for when Rust is installed |
 
 The one list of these locations is `langs/.config/environment.d/10-langs.conf`:

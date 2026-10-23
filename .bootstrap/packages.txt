@@ -17,6 +17,8 @@ git-delta
 # so the command -v check won't match on Debian once already installed.
 fd-find
 neovim
+# Nim compiles through C (install.sh installs Nim itself into ~/.langs)
+gcc
 # lints the repo's shell scripts, same as CI (.github/workflows/lint.yml)
 ShellCheck
 # installer prerequisites
