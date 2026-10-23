@@ -79,8 +79,8 @@ services). Exits 1 if anything failed.
 
 The desktop's recovery (quickshell, sway, the lock screen, a session that
 won't start) is in [`~/.rice`'s README](https://github.com/piarn/.rice#when-things-break).
-From the terminal side: every machine can log in to a plain shell (ly's
-**Terminal** session on desktop, any TTY or ssh everywhere), and
+From the terminal side: every machine can log in to a plain shell (the login
+screen's **terminal** session on desktop, any TTY or ssh everywhere), and
 everything in this repo works from there.
 
 CI (`.github/workflows`) runs shellcheck, `fish --no-execute` and
