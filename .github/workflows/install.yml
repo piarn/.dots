@@ -1,8 +1,8 @@
-# Runs install.sh --ci in a fresh container per supported distro: installs
-# packages.txt, the polkit agent, the GitHub-release tools and mise, and
-# builds the pinned quickshell — the parts that break when a distro renames
-# or drops a package. Weekly as well as on changes, since the distros move
-# even when this repo doesn't.
+# Runs install.sh --ci (the terminal profile) in a fresh container per
+# supported distro: installs packages.txt, npm, the GitHub-release tools
+# and mise — the parts that break when a distro renames or drops a
+# package. Weekly as well as on changes, since the distros move even when
+# this repo doesn't. The desktop profile's own CI is in ~/.rice.
 name: install
 
 on:
@@ -11,7 +11,6 @@ on:
       - install.sh
       - .bootstrap/**
       - extras/lib.sh
-      - scripts/.local/bin/polkit-agent
       - .github/workflows/install.yml
   schedule:
     - cron: "0 6 * * 1"
@@ -25,11 +24,11 @@ jobs:
         image:
           - fedora:latest
           - debian:trixie
-          - ubuntu:24.04 # Qt 6.4: exercises the aqtinstall Qt fallback
+          - ubuntu:24.04
           - archlinux:latest
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       DEBIAN_FRONTEND: noninteractive
       GITHUB_TOKEN: ${{ github.token }}

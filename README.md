@@ -1,62 +1,66 @@
 # .dotfiles
 
-Managed with [GNU Stow](https://www.gnu.org/software/stow/). Each top-level
-directory (`bash`, `fish`, `foot`, ...) is a stow package whose contents
-mirror `$HOME`.
+The terminal: shell (fish, bash), editor (nvim), tmux, git and the TUI
+tools (yazi, lazygit, lazydocker, fzf, ripgrep, ...), plus the
+[agent pool](#agent-pool) that runs `claude` across two subscriptions.
+Managed with [GNU Stow](https://www.gnu.org/software/stow/): each
+top-level directory (`bash`, `fish`, `nvim`, ...) is a stow package whose
+contents mirror `$HOME`.
+
+The desktop (sway, quickshell, the GUI apps) is
+[`~/.rice`](https://github.com/piarn/.rice)'s, layered on top only where
+it's wanted.
 
 ## Setup
 
 ```
 git clone <repo> ~/.dots
 cd ~/.dots
-./install.sh
+./install.sh terminal     # work laptop, server: the terminal only
+./install.sh desktop      # own laptop: terminal + ~/.rice's sway/quickshell desktop
+./install.sh              # re-run with whichever profile this machine has
 ```
 
+| Profile | What it installs |
+| --- | --- |
+| `terminal` | this repo's packages, the CLI tools, `~/.rice` cloned for the palette (nothing desktop is linked or installed) |
+| `desktop` | `terminal`, then `~/.rice/install.sh`: sway, quickshell, kitty/foot, the flatpaks, the login screen and session services |
+
+The profile is saved in `~/.config/dots/profile`, so a bare `./install.sh`
+keeps it. Switching from `desktop` to `terminal` unlinks the desktop
+configs (`~/.rice/install.sh --uninstall`); packages stay installed.
+
 `install.sh` installs whatever's missing from `.bootstrap/packages.txt`
-(apt/dnf/pacman) and `.bootstrap/flatpaks.txt` (Flathub apps, system-wide),
-then symlinks each package into `$HOME`. Anything already sitting at a
-target path (e.g. a distro's default `~/.bashrc`) is moved aside into
-`~/.local/state/dots/backup/<timestamp>/` first, so the repo version always
-wins and the old file is kept for reference. Finally it runs
-`dots-reload`, which pushes the new configs into whatever is already
-running (tmux server, kitty, sway, quickshell); run it by hand, or pick
-"reload" in the command center, any time a config changes under a running
-session.
+(apt/dnf/pacman), then symlinks each package into `$HOME`. Anything
+already sitting at a target path (e.g. a distro's default `~/.bashrc`) is
+moved aside into `~/.local/state/dots/backup/<timestamp>/` first, so the
+repo version always wins and the old file is kept for reference. Finally
+it runs `dots-reload`, which pushes the new configs into whatever is
+already running (the tmux server, fish; on desktop it hands kitty, sway
+and quickshell to `~/.rice`'s `rice-reload`); run it by hand any time a
+config changes under a running session.
 
 Tested distro families: Fedora (dnf), Debian/Ubuntu (apt), Arch (pacman).
 On Arch, three of the VPN extras (`mullvad`, `netbird`, `protonvpn`) and
 `ssh-vpn`'s NetworkManager plugin only have a community AUR package, no
 official one — `extras/*/setup.sh` needs `yay` or `paru` already on PATH
 for those specifically and fails with instructions if neither is found;
-it never installs one for you. Everything else (the base desktop stack,
-`tailscale`, `zerotier`, `openconnect`/`openvpn`/`vpnc`/`wireguard`) has
-an official package on all three and needs nothing extra.
+it never installs one for you.
 
-Quickshell itself is the one exception to "install from the distro's
-package manager": `install_quickshell()` in `install.sh` builds it from
-source, pinned to one git tag (`QUICKSHELL_VERSION`), the same on every
-distro — it ships no prebuilt binary, has no official Ubuntu package at
-all, and Fedora/Debian/Arch each package a different point release, which
-risks breaking the QML API this whole desktop is built against. Costs a
-handful of `-devel` build dependencies and a few minutes compiling on a
-fresh install; a version marker at `~/.local/share/dots-quickshell-version`
-makes re-runs a no-op until `QUICKSHELL_VERSION` is bumped.
-
-`.bootstrap/` holds machine-setup helpers `install.sh` drives: system
-packages (`packages.txt`) and the one-time fish plugin-manager setup
-(`fish/install_fisher.sh`, `fish/install_bass.sh` — normally a no-op since
-the resulting plugin files are committed under `fish/.config/fish`). A few
+`.bootstrap/` holds what `install.sh` drives: system packages
+(`packages.txt`), the installer library shared with `~/.rice/install.sh`
+(`lib.sh`: package managers, pinned GitHub releases, stow with backups,
+the profile) and the one-time fish plugin-manager setup (`fish/`). A few
 `packages.txt` entries install a binary whose name doesn't match the
-package name (`ripgrep`→`rg`, `neovim`→`nvim`, `wl-clipboard`→`wl-copy`,
-`pulseaudio-utils`→`pactl`) or a differently-cased package name on apt —
-`install.sh` handles both via small override maps near the top.
+package name (`ripgrep`→`rg`, `neovim`→`nvim`) or a differently-cased
+package name on apt — `lib.sh` handles both via small override maps.
 
-`yazi`, `lazygit`, `lazydocker`, `satty` and `mise` aren't packaged for
-apt/dnf (and `tree-sitter`, which nvim builds its parsers with, is too old on
-Debian/Ubuntu), so `install.sh` downloads each from its project's GitHub releases
-into `~/.local/bin` instead, pinned to the tag in `RELEASE_VERSIONS` (bump
-it and re-run to upgrade; skipped if installed some other way — e.g.
-`lazydocker` via `go install`).
+`yazi`, `lazygit`, `lazydocker` and `mise` aren't packaged for apt/dnf
+(and `tree-sitter`, which nvim builds its parsers with, is too old on
+Debian/Ubuntu), so `install.sh` downloads each from its project's GitHub
+releases into `~/.local/bin` instead, pinned to the tag in
+`RELEASE_VERSIONS` (bump it and re-run to upgrade; skipped if installed
+some other way).
 
 ### Checking a machine
 
@@ -65,48 +69,84 @@ it and re-run to upgrade; skipped if installed some other way — e.g.
 ```
 
 Read-only: lists what `install.sh` would still install or link (via
-stow's dry run), links in `$HOME` left dangling by files since removed from
-a package (a normal `install.sh` run deletes those), and — inside sway —
-which session services aren't running, and whether tmux, sway or
-quickshell are running an older config than the one on disk (fix: run
-`dots-reload`). Exits 1 if anything failed.
+stow's dry run), links left dangling by files since removed from a
+package (a normal `install.sh` run deletes those), the agent pool's
+accounts, and whether tmux is running an older config than the one on
+disk (fix: `dots-reload`). On the desktop profile it goes on to
+`~/.rice/install.sh --doctor` (the login screen, sway, quickshell, session
+services). Exits 1 if anything failed.
 
 ### When things break
 
-- **quickshell's config doesn't load:** `qs-watchdog` runs the last config
-  that did (`~/.local/state/dots/quickshell-good`) and says so in a
-  swaynag. Fix the config and run `dots-reload quickshell`; once it loads,
-  the fallback is stopped.
-- **Locking:** everything locks through `dots-lock`, which uses swaylock
-  when quickshell's lock screen doesn't come up.
-- **sway dies at startup:** `sway-session` retries once with the stock
-  `/etc/sway/config` (safe mode); see `~/.local/state/sway.log`. If that
-  fails too you're back at the login screen, where GNOME still works.
-  `dots-reload` won't reload a sway config that fails `sway -C`.
-- **The session is wedged:** switch to a TTY (Ctrl+Alt+F3) or ssh in and
-  run `dots-rescue` for the options (restart or roll back quickshell,
-  reload or exit sway, get a swaylock prompt).
+The desktop's recovery (quickshell, sway, the lock screen, a session that
+won't start) is in [`~/.rice`'s README](https://github.com/piarn/.rice#when-things-break).
+From the terminal side: every machine can log in to a plain shell (ly's
+**Terminal** session on desktop, any TTY or ssh everywhere), and
+everything in this repo works from there.
 
-CI (`.github/workflows`) runs shellcheck and `fish --no-execute` over the
-repo on every push, and `./install.sh --ci` in fresh Fedora, Debian,
-Ubuntu 24.04 and Arch containers whenever the installer changes (and
-weekly): every package, the polkit agent, the release-binary tools and a
-full quickshell build — the parts that break when a distro renames or
-drops a package.
+CI (`.github/workflows`) runs shellcheck, `fish --no-execute` and
+`tests/run.sh` on every push, and `./install.sh --ci` in fresh Fedora,
+Debian, Ubuntu 24.04 and Arch containers whenever the installer changes
+(and weekly): every package and the release-binary tools — the parts that
+break when a distro renames or drops a package.
+
+## Agent pool
+
+`claude` runs on two Claude subscriptions, `claude1` and `claude2`, and
+rolls over to the other one when it hits a usage limit — mid-conversation,
+picking the same conversation back up.
+
+```
+~/.agent-pool/
+  claude1/   claude2/    one CLAUDE_CONFIG_DIR per subscription: its login
+                         (.credentials.json) and .claude.json, nothing else
+  shared/                sessions, prompt history, settings, CLAUDE.md, memory,
+                         plugins, skills, agents, commands — linked into both
+  state/                 which account is active, recorded limits, last usage
+  bin/  lib/             stowed from ./agent-pool
+```
+
+```
+agent-pool                     status: accounts, active one, limits, 5h/7d usage
+agent-pool login claude2       log a subscription in (once per account)
+agent-pool use claude2         start new sessions on claude2
+agent-pool next                switch to the next usable account
+agent-pool clear               forget recorded limits
+```
+
+How the rollover works:
+
+- `~/.agent-pool/bin/claude` sits ahead of the real `claude` on PATH
+  (`config.fish`, `.bashrc`, `environment.d`); claude's own updater keeps
+  managing `~/.local/bin/claude`. It starts claude on the active account,
+  or the next one if the active one is at its limit.
+- The status line (`lib/statusline`) shows the account and the plan's 5h /
+  7d meters, and records them, so a new session never starts on an
+  account it already saw full.
+- When a turn fails with a usage limit, Claude Code's `StopFailure` hook
+  (`lib/on-limit`, registered in the shared `settings.json`) records when
+  the limit resets, and — if the other account is usable — ends that
+  claude. The wrapper then runs `claude --resume <same session>` on the
+  other account with "Continue where you left off", keeping flags like
+  `--model` and the permission mode. Sessions live in `shared/projects`,
+  so the other account has the whole conversation.
+- If both accounts are limited, claude starts on the one that frees up
+  first and says when.
+
+`AGENT_POOL_ACCOUNT=claude2 claude` pins one run to an account. A claude
+started from inside another (`CLAUDECODE` set) skips the pool and keeps
+the account it inherited. The first time an account opens a directory it
+asks to trust it, once.
 
 ## .rice
 
-This repo owns *configs*; [`~/.rice`](https://github.com/piarn/.rice) owns
-the *styling* layer several of them include or symlink from — sway's
-colors/gaps/screen-layout, tmux/nvim/fish accents, and the
-yazi/lazygit/lazydocker/firefox/KDE-app theme files. `install.sh` clones
-it to `~/.rice` over https if it isn't already there (pushes go over
-ssh), fast-forwards it when its branch has an upstream (a local-only
-branch is left alone), renders the current theme
-(`~/.rice/bin/apply-theme`), and — if sway is already running — applies
-whichever screen layout matches what's connected
-(`~/.rice/bin/apply-layout --auto`). Both are safe to re-run any time; see
-`~/.rice/README.md` for how theming and screen layouts actually work.
+[`~/.rice`](https://github.com/piarn/.rice) owns the palette the configs
+here take their colors from (tmux, nvim, fish, fzf, eza, yazi, lazygit,
+lazydocker), and the desktop. Both profiles clone it over https (pushes go
+over ssh), fast-forward it when its branch has an upstream, and render the
+current theme (`~/.rice/bin/apply-theme`); only the desktop profile
+installs anything from it. Every config here still works without it,
+falling back to neutral colors.
 
 ## tmux
 
@@ -121,91 +161,6 @@ tmux and sway (one file, `lua/config/keymaps.lua`), toggleable tree / outline /
 problems / terminal panels, run-build-test per language, a debugger with a
 modal stepping layer, and hardtime breaking hjkl habits — see
 [`nvim/README.md`](nvim/README.md).
-
-## Desktop
-
-sway + [quickshell](quickshell/.config/quickshell): one 600px **island**
-centered at the top of each screen (workspaces · clock · status) that grows
-into tabs — system, calendar, notifications, network, run (the command
-center) and clipboard — plus the lock screen and notification toasts.
-Click the clock for the calendar, the status for system, `●` for
-notifications; inside, `h`/`l` or Ctrl+Tab switch tabs, Esc or a click
-outside collapses it. The rule: `$mod`+letter is
-the everyday action, `$mod+Shift` is the bigger version (move, capture,
-system). Plain Alt is left to apps.
-
-Weather (the bar's clock pill and the lock screen) is for one fixed city,
-set per machine and kept out of the repo:
-`echo city=Vilnius > ~/.config/dots/weather.conf`. `dots-weather.timer`
-fetches it from Open-Meteo every 30 minutes; without that file it stays
-hidden.
-
-| Keys | Action |
-| --- | --- |
-| `$mod+Return` / `$mod+Shift+Return` | terminal (kitty) / quick terminal (foot) |
-| `$mod+Space` / `$mod+d` | the island's run tab, the command center (either key) |
-| `$mod+q` | close window |
-| `$mod+v` | the island's clipboard tab (cliphist history) |
-| `$mod+e` | file manager (Dolphin) |
-| `$mod+b` | browser (Firefox) |
-| `$mod+h/j/k/l`, arrows | focus; add Shift to move the window |
-| `$mod+1`–`0` | workspace; add Shift to send the window there |
-| `$mod+t` | toggle split direction (side by side ↔ stacked) |
-| `$mod+w` | toggle tabbed ↔ tiled |
-| `$mod+f` / `$mod+Shift+f` | maximize / fullscreen |
-| `$mod+Shift+t` | toggle floating |
-| `$mod+Tab` | focus between tiled and floating windows |
-| `$mod+a` | focus parent container |
-| `$mod+r` | resize mode (hjkl/arrows, Enter or Esc to leave) |
-| `$mod+minus` / `$mod+Shift+minus` | show / send to scratchpad |
-| `$mod+Shift+s` | region screenshot: frozen screen in satty, crop, Enter saves + copies |
-| `$mod+Shift+r` | start/stop screen recording to `~/Videos/Captures` (click a window, drag a region, or click a monitor's bar) |
-| `$mod+Escape` | lock |
-| `$mod+Shift+Escape` | command center: `:` session mode (lock, suspend, logout, reboot, shutdown) |
-| `$mod+Shift+c` | reload sway and restart quickshell |
-
-The command center is a search box and a short list: apps, most-used
-first, ranked by name/description/keywords ("pdf" finds Zathura). A
-leading character switches to a mode:
-
-| Prefix | Mode |
-| --- | --- |
-| `=` | calculator (`=2^10*3`, `sqrt`, `pi`); Enter copies the result |
-| `>` | shell command; Enter runs it in kitty, Shift+Enter in the background |
-| `/` | files under `~` via fd (empty: recently opened); Shift+Enter shows it in Dolphin |
-| `?` | web search (or open an address) |
-| `@` | switch to an open window |
-| `~` | dev: tmux sessions (running and frozen), git projects, ssh hosts from `~/.ssh/config`; Enter opens one as a tmux session (`tmux-open`) in the terminal already showing tmux, or a new kitty |
-| `!` | tools: region screenshot, screen recording, color picker (`color-pick`), clipboard history, notifications, silence |
-| `:` | session: lock, reload, suspend, logout, reboot, shutdown (the last three need Enter twice); `:theme <name>`, `:layout <name>` |
-
-Keys: ↑↓ or `^j`/`^k` move, Enter acts, Esc closes. The mouse works
-everywhere too.
-
-`qs ipc call commandcenter toggle` opens/closes it; `commandcenter open
-'<text>'` opens it pre-typed, e.g. `'@'` to bind a key straight to the
-window switcher, or `':'` straight to session actions.
-
-The command center is the island's run tab. The system tab is the
-mouse-first glance of the same things (plus the tray, media and battery),
-and the other tabs hold the deep views (enterprise/hidden Wi-Fi, VPN
-details, calendar, notifications).
-
-Background services run as systemd user services under
-`dots-session.target` (`sway/.config/systemd/user`), started once sway has
-exported its environment and stopped when it exits: the polkit agent
-(`mate-polkit`, password prompts), swayidle (lock after 10 minutes idle and
-before sleep), cliphist, udiskie, the bluetooth agent, `layout-watch` and
-`qs-watchdog`. A dead one is restarted; `journalctl --user -u <name>` has
-its log, and `./install.sh --doctor` flags any that aren't running.
-
-If quickshell hangs or crashes, `qs-watchdog` restarts it within ~15s
-(re-locking if the session was locked) and keeps a hung instance's log
-under `~/.cache/qs-watchdog/`. `$mod+Shift+c` does the same by hand.
-
-New files in a package need `stow -R --no-folding -t ~ <pkg>` before
-they're linked in — quickshell reports a new QML file as "X is not a
-type" until then.
 
 ## Extras
 
@@ -222,7 +177,9 @@ Enable them per machine:
 The enabled list is kept in the untracked `.extras-enabled`, and
 `install.sh` re-links whatever is on it. Each extra is a directory with a
 `setup.sh` (installs its dependencies, idempotent) and/or a `home/` stow
-package.
+package. A VPN extra's quickshell panel is desktop code, so it lives in
+`~/.rice/desktop/extras/<name>/home` and is linked only on the desktop
+profile; on a terminal machine the extra is just its client.
 
 VPN clients are one extra each, open-source clients only. Enabling one
 installs the client and its daemon; the ones with quickshell code add
@@ -244,8 +201,9 @@ VPN profiles — which is where the NM-plugin extras' profiles show up.
 | `ssh-vpn` | NM SSH plugin: a VPN over a plain SSH login, via [settings] |
 
 `qs ipc call vpn toggle <name>` connects/disconnects a VPN extra, e.g. for
-a sway bind. Adding another client: an extra whose `home/` puts a `Vpn.qml`
-(a `components/VpnProvider.qml`) under `~/.config/quickshell/extras/<name>/`;
+a sway bind. Adding another client: an extra here with its `setup.sh`, plus
+`~/.rice/desktop/extras/<name>/home/` putting a `Vpn.qml` (a
+`components/VpnProvider.qml`) under `~/.config/quickshell/extras/<name>/`;
 `state/ExtrasState.qml` loads it at startup.
 
 ### Languages

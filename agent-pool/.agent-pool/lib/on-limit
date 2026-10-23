@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# StopFailure hook (matcher rate_limit), registered in the pool's shared
+# settings.json by `agent-pool setup`. Claude Code runs it when a turn ends
+# because the account hit a usage limit. It records until when this
+# account is limited (state/<account>.limited) and, when the session runs
+# under the pool's `claude` wrapper and another account is usable, hands
+# the session over: writes the session id to state/handoff.<wrapper pid>
+# and ends this claude, which the wrapper then resumes on the next account.
+# Fire-and-forget: Claude Code ignores its output and exit status.
+set -uo pipefail
+
+POOL="${AGENT_POOL_DIR:-$HOME/.agent-pool}"
+STATE="$POOL/state"
+acct=${AGENT_POOL_ACCOUNT:-$(basename "${CLAUDE_CONFIG_DIR:-}")}
+[[ $acct == claude* ]] || exit 0
+mkdir -p "$STATE"
+
+input=$(cat)
+
+# "…limit reached|1767225600" (epoch), "resets 3pm (Europe/Vilnius)",
+# "resets Oct 25, 3pm" — whichever the message carries; else the status
+# line's last reading; else an hour from now.
+read -r session until < <(HOOK_INPUT="$input" python3 - "$STATE/$acct.usage.json" <<'PY'
+import json, os, re, subprocess, sys, time
+try:
+    d = json.loads(os.environ.get("HOOK_INPUT") or "{}")
+except ValueError:
+    d = {}
+now = int(time.time())
+until = 0
+text = " ".join(str(d.get(k) or "") for k in ("last_assistant_message", "error_details"))
+m = re.search(r"\|(\d{10})\b", text)
+if m:
+    until = int(m.group(1))
+if not until:
+    m = re.search(r"resets\s+(?:at\s+)?([^·\n(]+?)\s*(?:\(([^)]+)\))?\s*(?:[·.\n]|$)", text)
+    if m:
+        when, tz = m.group(1).replace(",", ""), m.group(2)
+        env = {"TZ": tz} if tz else None
+        r = subprocess.run(["date", "-d", when, "+%s"], capture_output=True, text=True, env=env)
+        if r.returncode == 0:
+            until = int(r.stdout)
+            if until <= now:
+                until += 86400   # "3pm" already passed today: tomorrow's
+if not until:
+    try:
+        meters = json.load(open(sys.argv[1])).get("rate_limits") or {}
+        until = max((int(v.get("resets_at") or 0) for v in meters.values() if isinstance(v, dict)
+                     and (v.get("used_percentage") or 0) >= 90), default=0)
+    except (OSError, ValueError, AttributeError):
+        pass
+if until <= now:
+    until = now + 3600
+print(d.get("session_id") or "-", until)
+PY
+)
+
+printf '%s %s\n' "$until" "$(date -d "@$until" '+%F %H:%M')" >"$STATE/$acct.limited.tmp" \
+    && mv "$STATE/$acct.limited.tmp" "$STATE/$acct.limited"
+
+wrapper=${AGENT_POOL_WRAPPER:-}
+[ -n "$wrapper" ] && [ "$session" != - ] && kill -0 "$wrapper" 2>/dev/null || exit 0
+next=$("$(dirname "$(readlink -f "$0")")/../bin/agent-pool" pick --except "$acct") || exit 0
+
+# This hook's ancestor whose parent is the wrapper is the claude to end.
+pid=$PPID claude=
+while [ -n "$pid" ] && [ "$pid" -gt 1 ]; do
+    parent=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    [ "$parent" = "$wrapper" ] && { claude=$pid; break; }
+    pid=$parent
+done
+[ -n "$claude" ] || exit 0
+
+echo "$session" >"$STATE/handoff.$wrapper"
+command -v notify-send >/dev/null 2>&1 \
+    && notify-send -a agent-pool "Claude: $acct hit its limit" "Resuming on $next" 2>/dev/null
+# Let claude finish writing the turn to the transcript before it's ended.
+( sleep 2; kill -TERM "$claude" 2>/dev/null ) </dev/null >/dev/null 2>&1 &
+disown
+exit 0

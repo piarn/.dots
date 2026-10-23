@@ -5,51 +5,31 @@
 # isn't running is skipped.
 #
 #   dots-reload                  everything
-#   dots-reload TARGET...        tmux kitty fish quickshell sway wallpaper
+#   dots-reload TARGET...        tmux fish kitty quickshell sway wallpaper
 #
 # The one reload path for install.sh, ~/.rice/bin/apply-theme (just the
 # targets a theme switch changed), extras.sh and the command center's
-# "reload". sway is only reloaded when its config passes `sway -C`.
+# "reload". tmux and fish are reloaded here; the desktop targets go on to
+# rice-reload (~/.rice, desktop profile), and are skipped on a
+# terminal-only machine that doesn't have it.
 # DOTS_NO_RELOAD=1 makes it a no-op: install.sh sets it around
 # apply-theme, since it reloads everything itself once it's done.
 [ -n "${DOTS_NO_RELOAD:-}" ] && exit 0
-[ $# -gt 0 ] || set -- tmux kitty fish quickshell sway wallpaper
+[ $# -gt 0 ] || set -- tmux fish kitty quickshell sway wallpaper
 
-tmux=; kitty=; fish=; quickshell=; sway=; wallpaper=
+tmux=; fish=; desktop=
 for target; do
     case $target in
         tmux) tmux=1 ;;
-        kitty) kitty=1 ;;
         fish) fish=1 ;;
-        quickshell) quickshell=1 ;;
-        sway) sway=1 ;;
-        wallpaper) wallpaper=1 ;;
+        kitty|quickshell|sway|wallpaper) desktop="$desktop $target" ;;
         *) sed -n '7,8p' "$0" | sed 's/^# \{0,1\}/usage: /' >&2; exit 1 ;;
     esac
 done
 
-sway_up() { swaymsg -t get_version >/dev/null 2>&1; }
-
-sway_config="${DOTS_SWAY_CONFIG:-$HOME/.config/sway/config}"
-
-# A reload with a broken config applies what parses and drops the rest;
-# keep the running config instead. --unsupported-gpu: without it the
-# check always fails on the NVIDIA driver.
-sway_config_ok() {
-    out=$(sway --unsupported-gpu -C -c "$sway_config" 2>&1) && return 0
-    echo "warning: $sway_config has errors; not reloading sway (the running config stays):" >&2
-    printf '%s\n' "$out" | grep -i 'error' | grep -viE 'nvidia|nouveau|proprietary' >&2
-    return 1
-}
-
 if [ -n "$tmux" ] && tmux list-sessions >/dev/null 2>&1; then
     echo "==> reloading tmux"
     tmux source-file "$HOME/.config/tmux/tmux.conf" || echo "warning: tmux reload failed" >&2
-fi
-
-# kitty re-reads kitty.conf (and the ~/.rice theme it includes) on SIGUSR1
-if [ -n "$kitty" ] && pkill -USR1 -x kitty 2>/dev/null; then
-    echo "==> reloading kitty"
 fi
 
 # The prompt color is a universal variable, which fish broadcasts to every
@@ -59,40 +39,9 @@ if [ -n "$fish" ] && [ -f "$HOME/.rice/fish/colors.fish" ] && pgrep -x fish >/de
     fish -c "source $HOME/.rice/fish/colors.fish" || echo "warning: fish reload failed" >&2
 fi
 
-if [ -n "$quickshell$sway" ] && ! sway_up; then
-    pgrep -x sway >/dev/null \
-        && echo "warning: sway is running but unreachable (SWAYSOCK unset?); skipped sway/quickshell" >&2
-    quickshell=; sway=; wallpaper=
-fi
-
-# quickshell's restart needs the reload (exec_always respawns it)
-if [ -n "$quickshell$sway" ] && ! sway_config_ok; then
-    quickshell=; sway=
-fi
-
-# Stow links file by file (--no-folding), so a QML file added since the
-# last install.sh isn't in ~/.config yet, and the restart below would load
-# a shell that references a type it can't find. Re-link first.
-if [ -n "$quickshell" ] && command -v stow >/dev/null 2>&1; then
-    dots=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
-    stow -d "$dots" -t "$HOME" --no-folding -R quickshell \
-        || echo "warning: re-linking quickshell failed; new files may be missing" >&2
-fi
-
-# Same as $mod+Shift+c: Colors.qml isn't file-watched, so quickshell only
-# picks it up fresh. SIGKILL because `qs kill` asks over IPC, which a hung
-# instance never answers; sway's exec_always brings it back on the reload.
-if [ -n "$quickshell" ] && pkill -KILL -x quickshell 2>/dev/null; then
-    echo "==> restarting quickshell"
-    sway=1
-fi
-
-if [ -n "$sway" ]; then
-    echo "==> reloading sway"
-    swaymsg -q reload || echo "warning: swaymsg reload failed" >&2
-fi
-
-if [ -n "$wallpaper" ] && [ -f "$HOME/.rice/wallpaper.png" ] && sway_up; then
-    swaymsg -q output '*' bg "$HOME/.rice/wallpaper.png" fill
+rice_reload="${DOTS_RICE_RELOAD:-$HOME/.local/bin/rice-reload}"
+if [ -n "$desktop" ] && [ -x "$rice_reload" ]; then
+    # shellcheck disable=SC2086  # one word per target
+    exec "$rice_reload" $desktop
 fi
 exit 0

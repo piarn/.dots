@@ -1,6 +1,6 @@
-# Weekly check of install.sh's pinned versions (RELEASE_VERSIONS and
-# QUICKSHELL_VERSION) against upstream. When any is behind it opens an
-# issue listing them, or updates the one already open, so pins don't rot
+# Weekly check of install.sh's pinned versions (RELEASE_VERSIONS) against
+# upstream; ~/.rice checks the desktop's (satty, quickshell). When any is
+# behind it opens an issue listing them, or updates the one already open, so pins don't rot
 # unnoticed. Bumping is still a manual edit: the install workflow then
 # tests the new versions on every distro.
 name: pins
@@ -36,7 +36,7 @@ jobs:
             [ -z "$existing" ] || gh issue close "$existing" --comment "All pins are current now."
             exit 0
           fi
-          body=$(printf 'Newer releases than `install.sh` pins:\n\n```\n%s\n```\n\nBump `RELEASE_VERSIONS` / `QUICKSHELL_VERSION` in `install.sh`, then check the install workflow passes.\n' "$out")
+          body=$(printf 'Newer releases than `install.sh` pins:\n\n```\n%s\n```\n\nBump `RELEASE_VERSIONS` in `install.sh`, then check the install workflow passes.\n' "$out")
           echo "$body"
           if [ -n "$existing" ]; then
             gh issue edit "$existing" --body "$body"

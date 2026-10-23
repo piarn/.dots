@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""Claude Code status line for the agent pool (set in the shared
+settings.json by `agent-pool setup`, unless one was set already).
+
+Shows the account, model, directory and the plan's 5-hour / 7-day meters,
+and keeps the meters in ~/.agent-pool/state/<account>.usage.json so
+`agent-pool pick` can skip an account that is already full before a new
+session starts on it.
+"""
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+pool = Path(os.environ.get("AGENT_POOL_DIR", Path.home() / ".agent-pool"))
+acct = os.environ.get("AGENT_POOL_ACCOUNT") or Path(os.environ.get("CLAUDE_CONFIG_DIR", "")).name
+
+try:
+    d = json.load(sys.stdin)
+except ValueError:
+    d = {}
+
+limits = d.get("rate_limits") or {}
+if acct.startswith("claude") and limits:
+    state = pool / "state"
+    state.mkdir(parents=True, exist_ok=True)
+    tmp = state / f".{acct}.usage.{os.getpid()}"
+    tmp.write_text(json.dumps({"at": int(time.time()), "rate_limits": limits}))
+    os.replace(tmp, state / f"{acct}.usage.json")
+
+DIM, YEL, RED, CYAN, RST = "\033[2m", "\033[33m", "\033[31m", "\033[36m", "\033[0m"
+
+
+def meter(label, m):
+    if not isinstance(m, dict) or m.get("used_percentage") is None:
+        return None
+    pct = m["used_percentage"]
+    color = RED if pct >= 90 else YEL if pct >= 70 else DIM
+    text = f"{label} {pct:.0f}%"
+    if pct >= 70 and m.get("resets_at"):
+        text += " ↻" + time.strftime("%H:%M", time.localtime(m["resets_at"]))
+    return f"{color}{text}{RST}"
+
+
+model = (d.get("model") or {}).get("display_name") or ""
+cwd = (d.get("workspace") or {}).get("current_dir") or d.get("cwd") or ""
+home = str(Path.home())
+if cwd.startswith(home):
+    cwd = "~" + cwd[len(home):]
+parts = [f"{CYAN}{acct or 'claude'}{RST}", model, f"{DIM}{cwd}{RST}"]
+parts += [m for m in (meter("5h", limits.get("five_hour")), meter("7d", limits.get("seven_day"))) if m]
+print(" · ".join(p for p in parts if p))

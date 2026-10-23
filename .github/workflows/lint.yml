@@ -1,6 +1,6 @@
 # Static checks on every push: shellcheck over every sh/bash script in the
 # repo (found by shebang, so new scripts are covered without listing them)
-# and fish's own parser over the fish config.
+# and fish's own parser over the fish config; then tests/run.sh.
 name: lint
 
 on:
@@ -27,3 +27,8 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq fish >/dev/null
           git ls-files '*.fish' | xargs -n1 fish --no-execute
+
+      - name: tests
+        run: |
+          sudo apt-get install -y -qq tmux >/dev/null
+          bash tests/run.sh

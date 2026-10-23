@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# `claude`, run on whichever pool account (~/.agent-pool, see agent-pool)
+# is usable, and rolled over to the next one when it hits a usage limit:
+# the StopFailure hook (lib/on-limit) records the limit, leaves the session
+# id in state/handoff.<this pid> and ends claude; this then resumes that
+# same conversation on the next account and tells it to carry on.
+#
+# First on PATH ahead of the real claude (fish conf.d/agent-pool.fish,
+# bashrc, environment.d), which it finds as the next `claude` on PATH, so
+# claude's own updater keeps managing ~/.local/bin/claude.
+#
+#   AGENT_POOL_ACCOUNT=claude2 claude   pin this run to one account
+#   AGENT_POOL_RESUME_PROMPT            what the resumed session is told
+#
+# Inside a claude session (CLAUDECODE is set: a hook, a tool, a nested
+# claude) it steps aside and runs the real one with the inherited account.
+set -uo pipefail
+
+POOL="${AGENT_POOL_DIR:-$HOME/.agent-pool}"
+here=$(dirname "$(readlink -f "$0")")
+pool() { "$here/agent-pool" "$@"; }
+
+real=$(pool real-claude) || { echo "claude: not installed (no claude on PATH besides $0)" >&2; exit 127; }
+
+if [ -n "${CLAUDECODE:-}" ]; then
+    exec "$real" "$@"
+fi
+
+if [ -n "${AGENT_POOL_ACCOUNT:-}" ]; then
+    acct=$AGENT_POOL_ACCOUNT
+else
+    acct=$(pool pick); rc=$?
+    if [ "$rc" -eq 2 ]; then
+        echo "agent-pool: every account is at its usage limit; $acct frees up first ($(date -d "@$(pool limited-until "$acct")" '+%a %H:%M'))" >&2
+    elif [ "$rc" -ne 0 ] || [ -z "$acct" ]; then
+        echo "agent-pool: no account is logged in yet; run: agent-pool login claude1" >&2
+        exit 1
+    fi
+fi
+
+prompt=${AGENT_POOL_RESUME_PROMPT:-"Continue where you left off. (The previous account hit its usage limit; this session moved to another account.)"}
+
+# The flags worth carrying into the resumed session; a prompt given on
+# the command line is not (it was already sent).
+carry_flags() {
+    local keep=()
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --model|--permission-mode|--add-dir|--settings|--agents|--effort|--append-system-prompt|--mcp-config|--allowedTools|--disallowedTools|--fallback-model)
+                [ $# -ge 2 ] && keep+=("$1" "$2"); shift ;;
+            --model=*|--permission-mode=*|--effort=*|--dangerously-skip-permissions|--verbose|--ide|--chrome|--no-chrome)
+                keep+=("$1") ;;
+        esac
+        shift
+    done
+    printf '%s\0' "${keep[@]}"
+}
+
+print_mode=
+for arg; do case "$arg" in -p|--print) print_mode=1 ;; esac; done
+
+export AGENT_POOL_WRAPPER=$$
+handoff="$POOL/state/handoff.$$"
+args=("$@")
+while :; do
+    rm -f "$handoff"
+    CLAUDE_CONFIG_DIR="$POOL/$acct" AGENT_POOL_ACCOUNT="$acct" "$real" "${args[@]}"
+    status=$?
+    [ -s "$handoff" ] || exit "$status"
+
+    session=$(cat "$handoff"); rm -f "$handoff"
+    next=$(pool pick --except "$acct") || exit "$status"
+    pool use "$next" >/dev/null
+    [ -t 0 ] && stty sane 2>/dev/null
+    printf '\n\033[33magent-pool:\033[0m %s hit its usage limit; resuming on %s\n\n' "$acct" "$next" >&2
+    acct=$next
+    if [ -n "$print_mode" ]; then
+        # a script asked for one answer: ask again on the next account
+        :
+    else
+        mapfile -d '' -t flags < <(carry_flags "$@")
+        args=("${flags[@]}" --resume "$session" "$prompt")
+    fi
+done

@@ -9,12 +9,26 @@
 #
 # Each extra is a directory here holding a setup.sh (installs
 # dependencies; idempotent) and/or a stow package `home/` mirroring $HOME.
-# Which extras are enabled is per machine, kept in the untracked
-# ~/.dots/.extras-enabled.
+# An extra's desktop half (e.g. a VPN's quickshell panel) lives in
+# ~/.rice/desktop/extras/<name>/home and is linked only on the desktop
+# profile (~/.config/dots/profile). Which extras are enabled is per
+# machine, kept in the untracked ~/.dots/.extras-enabled.
 set -euo pipefail
 
 EXTRAS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENABLED_FILE="$EXTRAS_DIR/../.extras-enabled"
+RICE_EXTRAS_DIR="${RICE_DIR:-$HOME/.rice}/desktop/extras"
+PROFILE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dots/profile"
+
+# The stow package dirs of extra $1: its own home/, plus its desktop half
+# from ~/.rice on the desktop profile.
+extra_dirs() {
+    [ -d "$EXTRAS_DIR/$1/home" ] && echo "$EXTRAS_DIR/$1"
+    if [ "$(cat "$PROFILE_FILE" 2>/dev/null)" = desktop ] && [ -d "$RICE_EXTRAS_DIR/$1/home" ]; then
+        echo "$RICE_EXTRAS_DIR/$1"
+    fi
+    return 0
+}
 
 available() {
     local d
@@ -39,16 +53,20 @@ require_extra() {
 }
 
 stow_extra() {
-    [ -d "$EXTRAS_DIR/$1/home" ] || return 0
-    stow -d "$EXTRAS_DIR/$1" -t "$HOME" --no-folding "$2" home
+    local dir
+    for dir in $(extra_dirs "$1"); do
+        stow -d "$dir" -t "$HOME" --no-folding "$2" home
+    done
 }
 
 # --no-folding means stow -D leaves the extra's (now empty) directories
 # behind, e.g. ~/.config/quickshell/extras/<name>.
 prune_dirs() {
-    [ -d "$EXTRAS_DIR/$1/home" ] || return 0
-    (cd "$EXTRAS_DIR/$1/home" && find . -mindepth 1 -type d | sort -r) | while IFS= read -r d; do
-        rmdir "$HOME/$d" 2>/dev/null || true
+    local dir
+    for dir in $(extra_dirs "$1"); do
+        (cd "$dir/home" && find . -mindepth 1 -type d | sort -r) | while IFS= read -r d; do
+            rmdir "$HOME/$d" 2>/dev/null || true
+        done
     done
 }
 
@@ -56,7 +74,7 @@ prune_dirs() {
 # startup, and the watchdog/exec_always bring it straight back. Only for
 # extras that actually add quickshell code.
 restart_quickshell() {
-    [ -d "$EXTRAS_DIR/$1/home/.config/quickshell" ] || return 0
+    [ -n "$(extra_dirs "$1" | grep -F "$RICE_EXTRAS_DIR")" ] || return 0
     "$EXTRAS_DIR/../scripts/.local/bin/dots-reload" quickshell
 }
 

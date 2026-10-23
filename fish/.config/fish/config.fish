@@ -12,3 +12,7 @@ fish_add_path ~/.langs/flutter/bin
 if test -f ~/.config/fish/local.fish
     source ~/.config/fish/local.fish
 end
+
+# Last, so it stays ahead of ~/.local/bin: the agent pool's `claude`
+# (~/.agent-pool/bin/claude) wraps the real one (agent-pool/README.md).
+fish_add_path --global --move --path ~/.agent-pool/bin

@@ -9,6 +9,8 @@ fi
 if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
     PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 fi
+# the agent pool's `claude` wraps the real one in ~/.local/bin
+case ":$PATH:" in *":$HOME/.agent-pool/bin:"*) ;; *) PATH="$HOME/.agent-pool/bin:$PATH" ;; esac
 export PATH
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:

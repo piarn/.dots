@@ -1,8 +1,0 @@
-# Hides GNOME Settings from app menus (the quickshell launcher included).
-# It can't be uninstalled: gnome-shell requires it, and gdm (the login
-# screen) requires gnome-shell. A same-named file in ~/.local/share
-# overrides the system one, and NoDisplay keeps it out of listings.
-[Desktop Entry]
-Type=Application
-Name=Settings
-NoDisplay=true

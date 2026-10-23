@@ -1,7 +1,0 @@
-[Unit]
-Description=Fetch the weather every 30 minutes
-PartOf=dots-session.target
-
-[Timer]
-OnActiveSec=5s
-OnUnitActiveSec=30min

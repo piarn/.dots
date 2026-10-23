@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+# Two (or more) Claude subscriptions behind one `claude`. Each account is a
+# CLAUDE_CONFIG_DIR, ~/.agent-pool/<name> (claude1, claude2, ...), holding
+# only what is that account's own: its login (.credentials.json) and
+# .claude.json. Everything else — sessions, prompt history, settings,
+# memory, plugins, skills — lives once in ~/.agent-pool/shared and is
+# linked into every account, so a conversation started on one account can
+# be resumed on another.
+#
+#   agent-pool                    status (same as `status`)
+#   agent-pool status             accounts, which is active, limits, usage
+#   agent-pool use <account>      make <account> the one new sessions start on
+#   agent-pool next               switch to the next usable account
+#   agent-pool login <account>    start claude on <account> to log it in
+#   agent-pool clear [account]    forget a recorded usage limit (all if none given)
+#   agent-pool setup              create/repair the pool (install.sh runs it)
+#   agent-pool pick [--except A]  print the account a new session should use
+#
+# The `claude` next to this script picks the account, and when a session
+# hits a usage limit (the StopFailure hook, lib/on-limit) it resumes the
+# same conversation on the next account. AGENT_POOL_DIR overrides
+# ~/.agent-pool (tests).
+set -euo pipefail
+
+POOL="${AGENT_POOL_DIR:-$HOME/.agent-pool}"
+SHARED="$POOL/shared"
+STATE="$POOL/state"
+
+# Shared between accounts: linked from each account dir into shared/.
+SHARED_ITEMS=(projects history.jsonl settings.json CLAUDE.md plugins agents commands
+    skills output-styles file-history todos plans keybindings.json)
+
+die() { echo "agent-pool: $*" >&2; exit 1; }
+
+accounts() {
+    local d
+    for d in "$POOL"/claude*/; do
+        [ -d "$d" ] && basename "$d"
+    done
+    return 0
+}
+
+is_account() { [ -n "${1:-}" ] && [ -d "$POOL/$1" ] && [[ $1 == claude* ]]; }
+logged_in() { [ -s "$POOL/$1/.credentials.json" ]; }
+active() {
+    local a
+    a=$(cat "$STATE/active" 2>/dev/null || true)
+    if is_account "$a"; then echo "$a"; else accounts | head -1; fi
+}
+
+# Epoch until which $1 can't be used (0 = usable now): a limit the hook
+# recorded, or a meter the status line last saw full.
+limited_until() {
+    python3 - "$STATE" "$1" <<'PY'
+import json, sys, time
+state, acct = sys.argv[1], sys.argv[2]
+now = time.time()
+until = 0
+try:
+    until = int(open(f"{state}/{acct}.limited").read().split()[0])
+except (OSError, ValueError, IndexError):
+    pass
+try:
+    usage = json.load(open(f"{state}/{acct}.usage.json")).get("rate_limits") or {}
+    for meter in usage.values():
+        if isinstance(meter, dict) and (meter.get("used_percentage") or 0) >= 100:
+            until = max(until, int(meter.get("resets_at") or 0))
+except (OSError, ValueError, AttributeError):
+    pass
+print(until if until > now else 0)
+PY
+}
+
+usable() { logged_in "$1" && [ "$(limited_until "$1")" = 0 ]; }
+
+# The active account first, then the rest in name order.
+candidates() {
+    local a first
+    first=$(active)
+    [ -n "$first" ] && echo "$first"
+    for a in $(accounts); do [ "$a" = "$first" ] || echo "$a"; done
+}
+
+pick() {
+    local except="" a soonest="" best=""
+    [ "${1:-}" = --except ] && except=${2:-}
+    for a in $(candidates); do
+        [ "$a" = "$except" ] && continue
+        usable "$a" && { echo "$a"; return 0; }
+    done
+    # Nothing usable: --except asks "is there anywhere to roll over to",
+    # and the answer is no. Otherwise hand back the logged-in account whose
+    # limit resets first, so `claude` still starts (and says so).
+    [ -n "$except" ] && return 1
+    for a in $(candidates); do
+        logged_in "$a" || continue
+        local u
+        u=$(limited_until "$a")
+        if [ -z "$soonest" ] || [ "$u" -lt "$soonest" ]; then soonest=$u; best=$a; fi
+    done
+    [ -n "$best" ] && { echo "$best"; return 2; }
+    return 1
+}
+
+set_active() {
+    mkdir -p "$STATE"
+    echo "$1" >"$STATE/active.tmp" && mv "$STATE/active.tmp" "$STATE/active"
+}
+
+fmt_time() { date -d "@$1" '+%a %H:%M'; }
+
+status() {
+    local a act until usage
+    act=$(active)
+    [ -n "$(accounts)" ] || die "no accounts in $POOL (run: agent-pool setup)"
+    for a in $(accounts); do
+        local mark=" "
+        [ "$a" = "$act" ] && mark="*"
+        if ! logged_in "$a"; then
+            printf '%s %-9s not logged in (agent-pool login %s)\n' "$mark" "$a" "$a"
+            continue
+        fi
+        until=$(limited_until "$a")
+        usage=$(python3 - "$STATE/$a.usage.json" <<'PY'
+import json, sys, time
+try:
+    d = json.load(open(sys.argv[1]))
+except (OSError, ValueError):
+    sys.exit()
+parts = []
+for name, label in (("five_hour", "5h"), ("seven_day", "7d")):
+    m = (d.get("rate_limits") or {}).get(name)
+    if isinstance(m, dict) and m.get("used_percentage") is not None:
+        parts.append(f"{label} {m['used_percentage']:.0f}%")
+age = int((time.time() - d.get("at", 0)) / 60)
+if parts:
+    print(" · ".join(parts) + f"  (seen {age}m ago)")
+PY
+)
+        if [ "$until" != 0 ]; then
+            printf '%s %-9s limited until %s  %s\n' "$mark" "$a" "$(fmt_time "$until")" "$usage"
+        else
+            printf '%s %-9s ready  %s\n' "$mark" "$a" "$usage"
+        fi
+    done
+}
+
+# Moves an account's own copy of a shared item into shared/ (first one
+# wins; later copies are merged where that's safe, otherwise kept aside in
+# state/migrated/) and links it.
+share_item() {
+    local acct=$1 item=$2 src="$POOL/$1/$2" dest="$SHARED/$2"
+    if [ -L "$src" ]; then
+        [ "$(readlink "$src")" = "../shared/$item" ] && return
+        rm -f "$src"
+    elif [ -e "$src" ]; then
+        if [ ! -e "$dest" ]; then
+            mv "$src" "$dest"
+        else
+            case "$item" in
+                history.jsonl)
+                    cat "$src" >>"$dest" && rm -f "$src" ;;
+                settings.json)
+                    python3 - "$src" "$dest" <<'PY'
+import json, sys
+src, dest = sys.argv[1], sys.argv[2]
+merged = json.load(open(src))
+merged.update(json.load(open(dest)))   # shared wins
+json.dump(merged, open(dest, "w"), indent=2)
+PY
+                    rm -f "$src" ;;
+                *)
+                    if [ -d "$src" ] && [ -d "$dest" ]; then
+                        cp -an "$src/." "$dest/"
+                    fi
+                    local aside
+                    aside="$STATE/migrated/$acct-$(date +%Y%m%d-%H%M%S)"
+                    mkdir -p "$aside"
+                    mv "$src" "$aside/$item" ;;
+            esac
+        fi
+    fi
+    ln -sfn "../shared/$item" "$src"
+}
+
+# The hook and status line the pool depends on, merged into the shared
+# settings.json without touching anything else in it. A status line the
+# user set themselves is left alone.
+ensure_settings() {
+    python3 - "$SHARED/settings.json" <<'PY'
+import json, os, sys
+path = sys.argv[1]
+try:
+    s = json.load(open(path))
+except (OSError, ValueError):
+    s = {}
+hook = {"type": "command", "command": "$HOME/.agent-pool/lib/on-limit"}
+groups = s.setdefault("hooks", {}).setdefault("StopFailure", [])
+if not any(h.get("command") == hook["command"] for g in groups for h in g.get("hooks", [])):
+    groups.append({"matcher": "rate_limit", "hooks": [hook]})
+s.setdefault("statusLine", {"type": "command", "command": "$HOME/.agent-pool/lib/statusline"})
+tmp = path + ".tmp"
+with open(tmp, "w") as f:
+    json.dump(s, f, indent=2)
+    f.write("\n")
+os.replace(tmp, path)
+PY
+}
+
+setup() {
+    local a item
+    mkdir -p "$SHARED" "$STATE" "$POOL/claude1" "$POOL/claude2"
+    chmod 700 "$POOL"/claude*
+    for item in projects plugins agents commands skills output-styles file-history todos plans; do
+        mkdir -p "$SHARED/$item"
+    done
+    for a in $(accounts); do
+        for item in "${SHARED_ITEMS[@]}"; do
+            share_item "$a" "$item"
+        done
+    done
+    ensure_settings
+    [ -f "$STATE/active" ] || set_active "$(accounts | head -1)"
+    echo "==> agent pool: $(accounts | tr '\n' ' ')(shared: $SHARED)"
+    for a in $(accounts); do
+        logged_in "$a" || echo "    $a isn't logged in yet: agent-pool login $a"
+    done
+}
+
+real_claude() {
+    local self dir
+    self=$(readlink -f "$(dirname "$(readlink -f "$0")")/claude")
+    IFS=: read -ra dirs <<<"$PATH"
+    for dir in "${dirs[@]}"; do
+        [ -x "$dir/claude" ] || continue
+        [ "$(readlink -f "$dir/claude")" = "$self" ] && continue
+        echo "$dir/claude"
+        return 0
+    done
+    [ -x "$HOME/.local/bin/claude" ] && { echo "$HOME/.local/bin/claude"; return 0; }
+    return 1
+}
+
+case "${1:-status}" in
+    status) status ;;
+    use)
+        is_account "${2:-}" || die "no such account '${2:-}' ($(accounts | tr '\n' ' '))"
+        set_active "$2"; echo "active: $2" ;;
+    next)
+        a=$(pick --except "$(active)") || die "no other usable account"
+        set_active "$a"; echo "active: $a" ;;
+    login)
+        is_account "${2:-}" || die "no such account '${2:-}' ($(accounts | tr '\n' ' '))"
+        real=$(real_claude) || die "claude isn't installed"
+        echo "Log in with the subscription for $2 (/login if it doesn't ask), then /exit."
+        CLAUDE_CONFIG_DIR="$POOL/$2" AGENT_POOL_ACCOUNT="$2" exec "$real" ;;
+    clear)
+        if [ -n "${2:-}" ]; then
+            rm -f "$STATE/$2.limited" "$STATE/$2.usage.json"
+        else
+            rm -f "$STATE"/*.limited "$STATE"/*.usage.json
+        fi ;;
+    setup) setup ;;
+    pick) shift; pick "$@" ;;
+    limited-until) limited_until "$2" ;;
+    real-claude) real_claude ;;
+    -h|--help|help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "unknown command '$1' (agent-pool help)" ;;
+esac

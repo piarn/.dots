@@ -1,3 +1,6 @@
+# Terminal profile: what the shell, editor and TUI tools need (dnf names;
+# install.sh translates for apt/pacman). The desktop's own packages are in
+# ~/.rice/.bootstrap/packages.txt.
 stow
 fish
 eza
@@ -9,41 +12,12 @@ ripgrep
 unzip
 # delta: git's pager (git/.gitconfig) and lazygit's; binary is `delta`
 git-delta
-# app installs from .bootstrap/flatpaks.txt
-flatpak
-
 # apt/dnf package is fd-find; the binary it installs is fd on Fedora but
 # fdfind on Debian/Ubuntu (see fish/.../functions/_fzf_search_directory.fish),
-# so the command -v check below won't match on Fedora once already installed.
+# so the command -v check won't match on Debian once already installed.
 fd-find
-
-# desktop stack (sway + friends)
-foot
-kitty
-sway
-# quickshell is NOT listed here — install.sh's install_quickshell()
-# builds it from a pinned source tag instead of using distro packages
-# (see the comment there for why: no prebuilt binaries, no official
-# Ubuntu package, and version drift across distros risks breaking the
-# QML this whole desktop is built against)
-grim
-wf-recorder
-cliphist
-wlsunset
-udiskie
-slurp
-wl-clipboard
-# mirrors the laptop panel onto HDMI in the `present` screen layout
-wl-mirror
-swayidle
-swaylock
-brightnessctl
-pulseaudio-utils
 neovim
-
 # lints the repo's shell scripts, same as CI (.github/workflows/lint.yml)
 ShellCheck
-
 # installer prerequisites
 curl
-stow
