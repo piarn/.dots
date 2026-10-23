@@ -6,8 +6,6 @@ end
 
 fish_add_path ~/.local/bin
 fish_add_path ~/bin
-fish_add_path ~/.langs/go/bin
-fish_add_path ~/.langs/flutter/bin
 
 if test -f ~/.config/fish/local.fish
     source ~/.config/fish/local.fish

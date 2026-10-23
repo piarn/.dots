@@ -21,7 +21,7 @@ BOOTSTRAP_DIR="$DOTS_DIR/.bootstrap"
 # shellcheck source=.bootstrap/lib.sh
 . "$BOOTSTRAP_DIR/lib.sh"
 
-PACKAGES=(agent-pool bash bat eza fd fish git nvim ripgrep scripts ssh tmux yazi)
+PACKAGES=(agent-pool bash bat eza fd fish git langs nvim ripgrep scripts ssh tmux yazi)
 # Fetched over https so a fresh machine needs no ssh key to install;
 # pushes still go over ssh.
 RICE_REPO="https://github.com/piarn/.rice.git"
@@ -131,6 +131,32 @@ install_mise() { install_from_github_release mise "${MISE_ARCH:+linux-${MISE_ARC
 # and Ubuntu package a far older one).
 install_tree_sitter() { install_from_github_release tree-sitter "${TS_ARCH:+tree-sitter-cli-linux-$TS_ARCH.zip}" tree-sitter; }
 
+# The toolchains in ~/.config/mise/config.toml (go, node), into ~/.langs/mise.
+# Read through the langs package's env file, so it works before any shell
+# has loaded it.
+LANGS_ENV="$HOME/.config/environment.d/10-langs.conf"
+
+langs_env() {
+    local key val
+    while IFS='=' read -r key val; do
+        case $key in ''|'#'*|PATH) continue ;; esac
+        val=${val//'${HOME}'/$HOME}
+        export "$key=$val"
+    done <"$LANGS_ENV"
+}
+
+install_toolchains() {
+    [ -f "$LANGS_ENV" ] && [ -x "$LOCAL_BIN/mise" ] || return 0
+    langs_env
+    mkdir -p "$HOME/.langs"
+    # adb ignores ANDROID_USER_HOME and only ever uses ~/.android
+    if [ -d "$HOME/.langs/android/.android" ] && [ ! -e "$HOME/.android" ]; then
+        ln -s .langs/android/.android "$HOME/.android"
+    fi
+    echo "==> installing toolchains (mise, into ~/.langs/mise)"
+    "$LOCAL_BIN/mise" install --yes || echo "warning: mise install failed; run it again later" >&2
+}
+
 install_tpm() {
     local tpm_dir="$HOME/.tmux/plugins/tpm"
     [ -d "$tpm_dir" ] || git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
@@ -220,6 +246,20 @@ doctor() {
         sed 's/^/          /' <<<"$dangling"
     fi
     [ "$DOCTOR_FAILS" -gt "$fails_before" ] || ok "every package is linked"
+
+    echo "toolchains"
+    if [ -f "$LANGS_ENV" ] && [ -x "$LOCAL_BIN/mise" ]; then
+        langs_env
+        local missing_tools
+        missing_tools=$("$LOCAL_BIN/mise" ls --missing --global 2>/dev/null | awk '{print $1 "@" $2}' | tr '\n' ' ')
+        if [ -z "$missing_tools" ]; then ok "mise toolchains (~/.langs/mise)"; else bad "not installed: $missing_tools(run install.sh, or mise install)"; fi
+    fi
+    local stray=() d
+    for d in go android-sdk jdk21 .gradle .pub-cache .android .cargo .rustup .choosenim .nimble; do
+        # a symlink into ~/.langs (~/.android, for adb) is where it should be
+        [ -e "$HOME/$d" ] && [ ! -L "$HOME/$d" ] && stray+=("$d")
+    done
+    if [ ${#stray[@]} -eq 0 ]; then ok "every toolchain is under ~/.langs"; else warn "toolchain dirs in ~ instead of ~/.langs: ${stray[*]}"; fi
 
     echo "agent pool"
     if [ -x "$HOME/.agent-pool/bin/agent-pool" ]; then
@@ -337,6 +377,7 @@ enable_ssh_agent
 install_fish_plugins
 install_tpm
 "$HOME/.tmux/plugins/tpm/bin/install_plugins" >/dev/null 2>&1 || true
+install_toolchains
 "$HOME/.agent-pool/bin/agent-pool" setup
 
 if [ "$profile" = desktop ]; then

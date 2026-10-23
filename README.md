@@ -174,10 +174,29 @@ rerere and prune-on-fetch on.
 
 ## Toolchains
 
-[mise](https://mise.jdx.dev) (installed from its GitHub release) pins
-go/node/python/... per project: `mise use go@1.24` in a project writes a
-`mise.toml`, and fish switches versions on `cd` (`conf.d/mise.fish`).
-Outside a pinned project the distro's toolchains are used as before.
+Every language toolchain and its packages live under **`~/.langs`**, one
+directory each, and nothing of theirs in `$HOME` itself:
+
+| `~/.langs/…` | What |
+| --- | --- |
+| `mise/` | toolchains [mise](https://mise.jdx.dev) installs: `go` and `node` everywhere (`langs/.config/mise/config.toml`), plus whatever a project's `mise.toml` pins |
+| `go/` | `GOPATH`: the module cache and `go install` binaries (`go/bin`, on PATH) |
+| `flutter/` | the Flutter SDK (a git checkout: `flutter upgrade`) |
+| `jdk21/` | the JDK Android/Gradle builds use (`JAVA_HOME`) |
+| `android/sdk`, `android/.android` | `ANDROID_HOME`, and `ANDROID_USER_HOME` (emulators, adb keys; `~/.android` is a symlink here, since adb only looks there) |
+| `gradle/` | `GRADLE_USER_HOME` |
+| `pub/` | `PUB_CACHE`, Dart/Flutter packages |
+| `cargo/` | `CARGO_HOME`/`RUSTUP_HOME`, for when Rust is installed |
+
+The one list of these locations is `langs/.config/environment.d/10-langs.conf`:
+the desktop session reads it as is, fish loads it (`conf.d/00-langs.fish`)
+and so does bash (`.bashrc`). mise's shims come first on PATH, so its
+`go`/`node` win over any distro copy, and an interactive fish switches to
+a project's pinned versions on `cd` (`conf.d/mise.fish`). `install.sh`
+runs `mise install`; `--doctor` checks the toolchains are installed and
+warns about any toolchain directory still sitting in `$HOME`. Plain
+caches (`go-build`, npm's) stay in `~/.cache`. System Python and gcc are
+the OS's and stay where the distro puts them.
 
 ## Adding a package
 

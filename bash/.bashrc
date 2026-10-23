@@ -9,6 +9,16 @@ fi
 if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
     PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 fi
+# Toolchain locations under ~/.langs: the list in
+# ~/.config/environment.d/10-langs.conf, the same one the desktop and fish get.
+if [ -f ~/.config/environment.d/10-langs.conf ] && [ -z "${MISE_DATA_DIR:-}" ]; then
+    while IFS='=' read -r key val; do
+        case $key in ''|'#'*) continue ;; esac
+        val=${val//'${HOME}'/$HOME}
+        export "$key=${val//'${PATH}'/$PATH}"
+    done <~/.config/environment.d/10-langs.conf
+fi
+
 # the agent pool's `claude` wraps the real one in ~/.local/bin
 case ":$PATH:" in *":$HOME/.agent-pool/bin:"*) ;; *) PATH="$HOME/.agent-pool/bin:$PATH" ;; esac
 export PATH

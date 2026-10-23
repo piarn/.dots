@@ -1,0 +1,6 @@
+# Toolchains on every machine (installed into ~/.langs/mise by
+# `mise install`, which install.sh runs). A project pins its own in a
+# mise.toml; outside one, these are used.
+[tools]
+go = "1.26"
+node = "22"
